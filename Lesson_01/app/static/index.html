@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#244f46">
+  <meta name="description" content="Учебный AI-администратор вымышленного сервиса психологической поддержки.">
+  <title>Точка опоры — рядом с первым шагом</title>
+  <link rel="stylesheet" href="/style.css"><script src="/app.js" defer></script>
+</head>
+<body>
+  <header class="topbar"><a class="brand" href="/" aria-label="Точка опоры, главная"><span class="brand-mark" aria-hidden="true">т.</span>точка опоры</a><span class="demo-tag">Учебный проект · AI</span></header>
+  <main class="layout">
+    <section class="intro" aria-labelledby="intro-title">
+      <p class="eyebrow">ПРОСТРАНСТВО БЕРЕЖНОГО ОБЩЕНИЯ</p>
+      <h1 id="intro-title">Первый шаг<br>можно сделать<br><em>без спешки.</em></h1>
+      <p class="lead">Узнайте, как устроены консультации,<br class="desktop-break"> и выберите подходящий формат.</p>
+      <div class="illustration" aria-hidden="true"><div class="sun"></div><div class="arch arch-back"></div><div class="arch arch-front"></div><div class="ground"></div><span class="illustration-caption">У каждого свой путь к опоре</span></div>
+      <div class="service-note"><span class="small-star" aria-hidden="true">✳</span><p>Онлайн, на русском языке, для взрослых.<br><span>Пн–сб · 10:00–20:00 МСК</span></p></div>
+      <p class="demo-explanation">«Точка опоры» — вымышленный сервис.<br>Здесь нельзя записаться или оплатить консультацию.</p>
+    </section>
+    <section class="chat-card" aria-labelledby="chat-title">
+      <header class="chat-header"><span class="avatar" aria-hidden="true">т.</span><div><h2 id="chat-title">Ваш AI-администратор</h2><p>Помогу разобраться в услугах</p></div><button id="clear" class="clear-button" type="button" title="Очистить диалог">Новый диалог</button></header>
+      <p id="mode-notice" class="mode-notice" role="status">Проверяем режим чата…</p>
+      <div id="messages" class="messages" role="log" aria-label="Переписка" aria-live="polite" aria-relevant="additions text">
+        <article class="message assistant"><span class="message-label">ТОЧКА ОПОРЫ</span><p>Здравствуйте! Я AI-администратор учебного сервиса. Расскажу о форматах консультаций, ценах и расписании. С чего начнём?</p></article>
+      </div>
+      <div class="suggestions" aria-label="Примеры вопросов"><button type="button">Сколько стоит консультация?</button><button type="button">Какие есть форматы?</button><button type="button">Как обратиться?</button></div>
+      <div class="composer-area"><p id="status" class="status" role="status" aria-live="polite"></p>
+        <form id="chat-form"><label class="sr-only" for="message">Ваш вопрос</label><div class="input-wrap"><textarea id="message" name="message" rows="2" maxlength="1500" placeholder="Напишите ваш вопрос…" required></textarea><button id="send" type="submit" aria-label="Отправить сообщение">↑</button></div><div class="input-hint"><span>Enter — отправить · Shift + Enter — новая строка</span><span id="counter">0 / 1500</span></div></form>
+        <p id="privacy" class="privacy">Не указывайте личные и чувствительные сведения. История исчезнет при обновлении страницы.</p>
+      </div>
+    </section>
+  </main>
+  <footer><p>Этот чат не проводит терапию и не оказывает экстренную помощь.</p><p>При непосредственной опасности обратитесь в местную экстренную службу или попросите человека рядом помочь.</p></footer>
+</body>
+</html>

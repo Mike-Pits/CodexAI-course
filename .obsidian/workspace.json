@@ -1,0 +1,219 @@
+{
+  "main": {
+    "id": "5c56fe2e8b1f7c46",
+    "type": "split",
+    "children": [
+      {
+        "id": "1678ac2982d1ce87",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "33c306bdfd7a633c",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Lesson_03/chatgpt/Lite_recruiter.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Lite_recruiter"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "62c88435e2cac960",
+    "type": "split",
+    "children": [
+      {
+        "id": "6243aa82b7208127",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "2a3c20cd3edb2ff7",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "1b9ca82f05815ffe",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "0fa46f43549593c6",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "2f116b3e9554f50a",
+    "type": "split",
+    "children": [
+      {
+        "id": "b559953c03da8b43",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "71dc1a02e74e7c2f",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "Lesson_01/AGENTS.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks"
+            }
+          },
+          {
+            "id": "577b4052363c88f1",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "Lesson_01/AGENTS.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links"
+            }
+          },
+          {
+            "id": "d9f50d31a1bb57d1",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "aac539250aabf4ab",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          },
+          {
+            "id": "e1ff325c3579cac6",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "Lesson_01/AGENTS.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
+    }
+  },
+  "active": "2a3c20cd3edb2ff7",
+  "lastOpenFiles": [
+    "Lesson_03/results/pro-20261011T110527338662Z/evaluations/v2/recruiter/train/strong-02.json",
+    "Lesson_03/results/pro-20261011T110527338662Z/evaluations/v2/recruiter/train",
+    "Lesson_03/results/pro-20261011T110527338662Z/evaluations/v2/recruiter",
+    "Lesson_03/results/pro-20261011T110527338662Z/evaluations/v2",
+    "Lesson_03/results/pro-20261011T110527338662Z/prompts/recruiter_v2.txt",
+    "Lesson_03/results/pro-20261011T110527338662Z/summary.json",
+    "Lesson_03/results/pro-20261011T110527338662Z/changes/sales_v2.json",
+    "Lesson_03/results/pro-20261011T110527338662Z/evaluations/v1/sales/validation/interested-07.json",
+    "Lesson_03/results/pro-20261011T110527338662Z/evaluations/v1/sales/validation",
+    "Lesson_03/results/pro-20261011T110527338662Z/evaluations/v1/sales/train/interested-01.json",
+    "Lesson_03/results/pro-20261011T110527338662Z/evaluations/v1/sales/train",
+    "Lesson_03/results/lite-deepseek/REPORT.md",
+    "Lesson_03/results/STATUS.md",
+    "Lesson_03/README.md",
+    "Lesson_02/delivery/upload/meeting-notes-ai/TEST_REPORT.md",
+    "Lesson_02/delivery/upload/meeting-notes-ai/SRS.md",
+    "Lesson_02/delivery/upload/meeting-notes-ai/README.md",
+    "Lesson_02/delivery/upload/meeting-notes-ai/PLAN.md",
+    "Lesson_02/TEST_REPORT.md",
+    "Lesson_02/README.md",
+    "Lesson_01/AGENTS.md",
+    "Lesson_01/dist/tochka-opory-lesson01/tochka-opory/README.md",
+    "Lesson_01/dist/tochka-opory-lesson01/tochka-opory/DEPLOY.md",
+    "Lesson_01/dist/tochka-opory-lesson01/tochka-opory/CHECKS.md",
+    "Lesson_01/dist/tochka-opory-lesson01/tochka-opory/AGENTS.md"
+  ]
+}

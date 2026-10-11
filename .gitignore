@@ -1,0 +1,28 @@
+# Secrets and local configuration
+**/api_key_*
+**/*_api_key
+**/*_key
+.env
+.env.*
+!.env.example
+
+# Python environments and caches
+.venv/
+__pycache__/
+.pytest_cache/
+*.py[cod]
+
+# Large local model/runtime data
+.models/
+.runtime/
+
+# Local sessions, generated exports and uploads
+.ssh-session/
+delivery/upload/
+
+# Generated artifacts and test results
+results/*/
+dist/
+
+# OS/editor files
+.DS_Store
