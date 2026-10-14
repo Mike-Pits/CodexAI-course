@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Lesson_03/chatgpt/Lite_recruiter.md",
+                "file": "Lesson_03/results/lite-chatgpt/REPORT.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Lite_recruiter"
+              "title": "REPORT"
             }
           }
         ]
@@ -188,8 +188,12 @@
       "bases:Create new base": false
     }
   },
-  "active": "2a3c20cd3edb2ff7",
+  "active": "33c306bdfd7a633c",
   "lastOpenFiles": [
+    "Lesson_03/results/lite-chatgpt/README.md",
+    "Lesson_03/README.md",
+    "README.md",
+    "Lesson_03/chatgpt/Lite_recruiter.md",
     "Lesson_03/results/pro-20261011T110527338662Z/evaluations/v2/recruiter/train/strong-02.json",
     "Lesson_03/results/pro-20261011T110527338662Z/evaluations/v2/recruiter/train",
     "Lesson_03/results/pro-20261011T110527338662Z/evaluations/v2/recruiter",
@@ -200,10 +204,8 @@
     "Lesson_03/results/pro-20261011T110527338662Z/evaluations/v1/sales/validation/interested-07.json",
     "Lesson_03/results/pro-20261011T110527338662Z/evaluations/v1/sales/validation",
     "Lesson_03/results/pro-20261011T110527338662Z/evaluations/v1/sales/train/interested-01.json",
-    "Lesson_03/results/pro-20261011T110527338662Z/evaluations/v1/sales/train",
     "Lesson_03/results/lite-deepseek/REPORT.md",
     "Lesson_03/results/STATUS.md",
-    "Lesson_03/README.md",
     "Lesson_02/delivery/upload/meeting-notes-ai/TEST_REPORT.md",
     "Lesson_02/delivery/upload/meeting-notes-ai/SRS.md",
     "Lesson_02/delivery/upload/meeting-notes-ai/README.md",

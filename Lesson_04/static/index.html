@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Куратор Практики</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="Практика">
+      <span class="brand-mark">П</span>
+      <span>Практика <small>AI-куратор</small></span>
+    </a>
+    <div id="session-actions" hidden>
+      <span id="identity"></span>
+      <button id="logout" class="quiet" type="button">Выйти</button>
+    </div>
+  </header>
+
+  <main>
+    <section id="login-view" class="login-shell">
+      <div class="hero">
+        <p class="kicker">КУРС ПРАКТИКА PYTHON</p>
+        <h1>Подберём обучение под вашу цель</h1>
+        <p class="lead">Куратор помнит контекст разговора и сохраняет только полезные предпочтения, чтобы не начинать каждую консультацию заново.</p>
+        <div class="facts"><span>6 недель</span><span>4–6 часов в неделю</span><span>2 формата</span></div>
+      </div>
+      <form id="login-form" class="panel auth-panel">
+        <p class="kicker">ДЕМО-ДОСТУП</p>
+        <h2>Войти в кабинет</h2>
+        <label for="username">Логин</label>
+        <input id="username" autocomplete="username" required value="anna">
+        <label for="password">Пароль</label>
+        <input id="password" type="password" autocomplete="current-password" required value="anna-demo">
+        <button class="primary" type="submit">Войти</button>
+        <details>
+          <summary>Тестовые пользователи</summary>
+          <p><b>anna</b> / anna-demo<br><b>boris</b> / boris-demo<br><b>admin</b> / admin-demo</p>
+        </details>
+      </form>
+    </section>
+
+    <section id="client-view" hidden>
+      <div class="workspace-head">
+        <div><p class="kicker">ЛИЧНАЯ КОНСУЛЬТАЦИЯ</p><h1>Здравствуйте, <span id="client-name"></span></h1></div>
+        <span id="model-badge" class="badge"></span>
+      </div>
+      <div class="client-grid">
+        <aside class="panel memory-panel">
+          <div class="section-title"><div><p class="kicker">ДОЛГОСРОЧНАЯ ПАМЯТЬ</p><h2>Что я учитываю</h2></div><span class="saved-dot" title="Сохраняется в JSON"></span></div>
+          <form id="profile-form">
+            <label for="goal">Цель</label><textarea id="goal" rows="3" placeholder="Например: автоматизировать отчёты"></textarea>
+            <label for="budget">Бюджет</label><input id="budget" placeholder="До 15 000 ₽">
+            <label for="format">Формат</label><select id="format"><option value="">Не выбран</option><option>самостоятельно</option><option>с наставником</option></select>
+            <label for="pace">Темп</label><input id="pace" placeholder="4 часа в неделю">
+            <label for="experience">Опыт</label><input id="experience" placeholder="Начинающий">
+            <button type="submit">Сохранить данные</button>
+          </form>
+          <p class="privacy">Эти данные доступны только вам и администратору.</p>
+        </aside>
+
+        <section class="panel chat-panel">
+          <div class="section-title">
+            <div><p class="kicker">КРАТКОСРОЧНЫЙ КОНТЕКСТ</p><h2>Диалог с куратором</h2></div>
+            <button id="new-dialog" class="quiet" type="button">Новый диалог</button>
+          </div>
+          <div id="chat" role="log" aria-live="polite">
+            <div class="welcome"><span>П</span><p>Расскажите о задаче или спросите, какой тариф подойдёт. Я учту сохранённые предпочтения.</p></div>
+          </div>
+          <div class="suggestions" aria-label="Быстрые вопросы">
+            <button type="button">Что мне подойдёт?</button>
+            <button type="button">Сколько стоит курс?</button>
+            <button type="button">Что ты помнишь обо мне?</button>
+          </div>
+          <form id="chat-form" class="composer">
+            <label class="sr-only" for="message">Сообщение</label>
+            <textarea id="message" rows="2" maxlength="2000" placeholder="Напишите сообщение…" required></textarea>
+            <button class="send" type="submit" aria-label="Отправить">→</button>
+          </form>
+        </section>
+      </div>
+    </section>
+
+    <section id="admin-view" hidden>
+      <div class="workspace-head"><div><p class="kicker">АДМИНИСТРИРОВАНИЕ</p><h1>Данные пользователей</h1></div><span class="badge">роль администратора</span></div>
+      <p class="lead narrow">Администратор может просматривать и исправлять сохранённые сведения. Пароли и история текущих диалогов здесь не отображаются.</p>
+      <div id="users" class="user-grid"></div>
+    </section>
+
+    <p id="notice" role="status" hidden></p>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>
+

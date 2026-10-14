@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "users": [
+    {
+      "id": "anna",
+      "username": "anna",
+      "role": "client",
+      "password_salt": "4a4b712e612565bda10ad22e30261971",
+      "password_hash": "185ec97881a6f63998db69762d62206ceb3e4fd659b10b300aed89374680f1c2",
+      "profile": {
+        "name": "Анна",
+        "goal": "автоматизировать еженедельные отчёты в Excel",
+        "budget": "до 12 000 ₽",
+        "format": "самостоятельно",
+        "pace": "4 часа в неделю",
+        "experience": "начинающий"
+      },
+      "updated_at": "2026-10-14T11:17:59+00:00"
+    },
+    {
+      "id": "boris",
+      "username": "boris",
+      "role": "client",
+      "password_salt": "54cb0fdd8217fb6734bad03631f75cc2",
+      "password_hash": "b180770f3293586805e13464f19f076700f4536a960db123ad95f220731687c8",
+      "profile": {
+        "name": "Борис",
+        "goal": "перейти в Python-разработку",
+        "budget": "до 25 000 ₽",
+        "format": "с наставником",
+        "pace": "6 часов в неделю",
+        "experience": "писал небольшие скрипты"
+      },
+      "updated_at": "2026-10-14T11:17:59+00:00"
+    },
+    {
+      "id": "admin",
+      "username": "admin",
+      "role": "admin",
+      "password_salt": "31329d143417a8c1180cc8dd155796f1",
+      "password_hash": "e8ee27f4f71b353eba4131bbb5155c4839d510d60357d205189a9a3dc42d30ac",
+      "profile": {
+        "name": "Администратор"
+      },
+      "updated_at": "2026-10-14T11:17:59+00:00"
+    }
+  ]
+}

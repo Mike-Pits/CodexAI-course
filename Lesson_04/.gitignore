@@ -1,0 +1,9 @@
+.env
+__pycache__/
+*.py[cod]
+.pytest_cache/
+data/store.json.tmp
+data/pro.sqlite3
+data/pro.sqlite3-*
+
+

@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Куратор Практики Pro</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/pro-style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="Практика Pro"><span class="brand-mark">П</span><span>Практика <small>AI-куратор Pro</small></span></a>
+    <div id="session-actions" hidden><span id="identity"></span><span class="db-pill">SQLite</span><button id="logout" class="quiet" type="button">Выйти</button></div>
+  </header>
+  <main>
+    <section id="login-view" class="login-shell">
+      <div class="hero"><p class="kicker">ПАМЯТЬ В SQL</p><h1>Каждый диалог продолжает вашу историю</h1><p class="lead">Куратор разделяет контекст текущего разговора и долговременные сведения. Вы управляете тем, что он хранит.</p><div class="facts"><span>История диалогов</span><span>Управление памятью</span><span>Разделение ролей</span></div></div>
+      <form id="login-form" class="panel auth-panel"><p class="kicker">ДЕМО-ДОСТУП</p><h2>Войти в кабинет</h2><label for="username">Логин</label><input id="username" autocomplete="username" required value="anna"><label for="password">Пароль</label><input id="password" type="password" autocomplete="current-password" required value="anna-demo"><button class="primary" type="submit">Войти</button><details><summary>Тестовые пользователи</summary><p><b>anna</b> / anna-demo<br><b>boris</b> / boris-demo<br><b>admin</b> / admin-demo</p></details></form>
+    </section>
+
+    <section id="client-view" hidden>
+      <div class="workspace-head"><div><p class="kicker">ПЕРСОНАЛЬНЫЙ КАБИНЕТ</p><h1>Здравствуйте, <span id="client-name"></span></h1></div><span id="model-badge" class="badge"></span></div>
+      <div class="pro-grid">
+        <aside class="panel history-panel"><div class="section-title"><div><p class="kicker">ИСТОРИЯ В SQL</p><h2>Диалоги</h2></div><button id="new-dialog" class="icon-button" type="button" title="Новый диалог">＋</button></div><div id="dialogs" class="dialogs"></div></aside>
+        <aside class="panel memory-panel"><div class="section-title"><div><p class="kicker">ДОЛГОСРОЧНАЯ ПАМЯТЬ</p><h2>Сохранённые сведения</h2></div><span class="saved-dot"></span></div><form id="memory-form"></form><p class="privacy">Можно изменить или удалить любое предпочтение. Имя удалить нельзя.</p></aside>
+        <section class="panel chat-panel"><div class="section-title"><div><p class="kicker">ТЕКУЩИЙ ДИАЛОГ</p><h2>Консультация</h2></div><span id="dialog-state" class="muted-label">Новый</span></div><div id="chat" role="log" aria-live="polite"></div><div class="suggestions"><button type="button">Что мне подойдёт?</button><button type="button">Что ты помнишь обо мне?</button></div><form id="chat-form" class="composer"><label class="sr-only" for="message">Сообщение</label><textarea id="message" rows="2" maxlength="2000" placeholder="Напишите сообщение…" required></textarea><button class="send" type="submit" aria-label="Отправить">→</button></form></section>
+      </div>
+    </section>
+
+    <section id="admin-view" hidden>
+      <div class="workspace-head"><div><p class="kicker">АДМИНИСТРИРОВАНИЕ SQL</p><h1>Память пользователей</h1></div><span class="badge">роль администратора</span></div>
+      <p class="lead narrow">Администратор управляет долговременными сведениями клиентов. Пароли и содержимое диалогов не отображаются.</p>
+      <div id="users" class="user-grid pro-users"></div>
+    </section>
+    <p id="notice" role="status" hidden></p>
+  </main>
+  <script src="/pro-app.js"></script>
+</body>
+</html>
+
