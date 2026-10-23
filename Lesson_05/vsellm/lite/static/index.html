@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>СУБ Помощник Lite</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header>
+        <p class="eyebrow">RAG по судовым документам</p>
+        <h1>СУБ Помощник Lite</h1>
+        <p class="lede">Ответы по правилам управления безопасностью с обязательным указанием источников.</p>
+        <div id="health" class="status">Проверяем готовность системы…</div>
+      </header>
+
+      <section id="chat" class="chat" aria-live="polite">
+        <article class="message assistant">
+          <div class="avatar">СУБ</div>
+          <div>
+            <p>Задайте вопрос о полномочиях капитана, подготовке экипажа, аварийной готовности, несоответствиях или документации.</p>
+          </div>
+        </article>
+      </section>
+
+      <form id="question-form" class="composer">
+        <label for="question">Ваш вопрос</label>
+        <div class="input-row">
+          <textarea id="question" rows="2" placeholder="Например: сколько хранятся заполненные чек-листы?" required></textarea>
+          <button type="submit">Отправить</button>
+        </div>
+      </form>
+    </main>
+    <script src="/static/app.js"></script>
+  </body>
+</html>
+

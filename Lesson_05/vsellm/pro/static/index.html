@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>СУБ Оператор Pro</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+    <style>
+      .topline { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+      .reindex { align-self: auto; min-height: 38px; padding: 8px 13px; border: 1px solid #b9c9d2; background: white; color: #123955; font-size: 13px; }
+      .diagnostics { margin-top: 14px; border-top: 1px solid #d8e0e5; padding-top: 10px; }
+      .diagnostics summary { cursor: pointer; color: #1f658f; font-weight: 750; }
+      .channel { margin-top: 12px; }
+      .channel h4 { margin: 0 0 7px; color: #123955; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; }
+      .hit { margin: 6px 0; padding: 9px 10px; border: 1px solid #d8e0e5; border-radius: 10px; background: white; font-size: 12px; }
+      .hit b { color: #123955; }
+      @media (max-width: 640px) { .topline { align-items: flex-start; } }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <header>
+        <div class="topline">
+          <p class="eyebrow">Hybrid RAG · Vector · BM25 · RRF</p>
+          <button id="reindex" class="reindex" type="button">Обновить индекс</button>
+        </div>
+        <h1>СУБ Оператор Pro</h1>
+        <p class="lede">Гибридный поиск по полному Судовому руководству с прозрачной диагностикой найденных фрагментов.</p>
+        <div id="health" class="status">Проверяем готовность системы…</div>
+      </header>
+
+      <section id="chat" class="chat" aria-live="polite">
+        <article class="message assistant">
+          <div class="avatar">PRO</div>
+          <div><p>Задайте вопрос по СУБ. После ответа раскройте диагностику, чтобы сравнить векторный поиск, BM25 и итоговый контекст.</p></div>
+        </article>
+      </section>
+
+      <form id="question-form" class="composer">
+        <label for="question">Ваш вопрос</label>
+        <div class="input-row">
+          <textarea id="question" rows="2" placeholder="Например: когда оформляется форма Д-8 и сколько она хранится?" required></textarea>
+          <button type="submit">Отправить</button>
+        </div>
+      </form>
+    </main>
+    <script src="/static/app.js"></script>
+  </body>
+</html>
+
