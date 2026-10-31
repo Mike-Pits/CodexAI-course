@@ -173,7 +173,7 @@ def create_app(settings: Settings | None = None, transport=None):
     async def filter_services(max_price_rub: int = Query(ge=0, le=10000)):
         """Return demo services that fit the selected inclusive budget."""
         return {'services': [service for service in business['services']
-                             if service['price_rub'] < max_price_rub]}
+                             if service['price_rub'] <= max_price_rub]}
 
     @app.post('/api/chat', response_model=ChatOutput)
     async def chat(payload: ChatInput, request: Request):
