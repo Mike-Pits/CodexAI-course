@@ -7,6 +7,8 @@ const send = document.querySelector('#send');
 const clear = document.querySelector('#clear');
 const counter = document.querySelector('#counter');
 const suggestions = [...document.querySelectorAll('.suggestions button')];
+const budget = document.querySelector('#budget');
+const filterServices = document.querySelector('#filter-services');
 const welcome = messages.firstElementChild.cloneNode(true);
 let modeReady = false;
 let history = [];
@@ -30,6 +32,8 @@ function busy(value) {
   send.disabled = value || !modeReady;
   input.disabled = value;
   suggestions.forEach(button => { button.disabled = value || !modeReady; });
+  budget.disabled = value || !modeReady;
+  filterServices.disabled = value || !modeReady;
   form.setAttribute('aria-busy', String(value));
 }
 function count() { counter.textContent = `${input.value.length} / 1500`; }
@@ -45,6 +49,43 @@ suggestions.forEach(button => button.addEventListener('click', () => {
   count();
   form.requestSubmit();
 }));
+filterServices.addEventListener('click', async () => {
+  if (controller || !modeReady) return;
+  const current = generation;
+  const requestController = new AbortController();
+  controller = requestController;
+  const timeout = setTimeout(() => requestController.abort(), 10000);
+  busy(true);
+  status.className = 'status';
+  status.textContent = 'Подбираю варианты…';
+  try {
+    const response = await fetch(`/api/services?max_price_rub=${encodeURIComponent(budget.value)}`,
+      {signal: requestController.signal});
+    const data = await response.json();
+    if (!response.ok || !Array.isArray(data.services)) throw new Error('Не удалось подобрать форматы.');
+    if (current !== generation) return;
+    const lines = data.services.map(service => {
+      const price = service.price_rub === 0 ? 'бесплатно' : `${service.price_rub.toLocaleString('ru-RU')} ₽`;
+      return `• ${service.name} — ${service.duration_minutes} мин., ${price}`;
+    });
+    addMessage('assistant', lines.length
+      ? `В выбранный бюджет входят:\n${lines.join('\n')}`
+      : 'В выбранный бюджет подходящих форматов нет.');
+    status.textContent = '';
+  } catch (error) {
+    if (current !== generation) return;
+    status.className = 'status error';
+    status.textContent = error.name === 'AbortError'
+      ? 'Подбор занял слишком много времени. Попробуйте ещё раз.'
+      : error.message;
+  } finally {
+    clearTimeout(timeout);
+    if (current === generation) {
+      controller = null;
+      busy(false);
+    }
+  }
+});
 clear.addEventListener('click', () => {
   generation += 1;
   controller?.abort();
