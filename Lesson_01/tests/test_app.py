@@ -44,6 +44,21 @@ def test_api_contract_and_privacy(tmp_path):
     assert b'testclient' not in raw
 
 
+def test_service_filter_uses_inclusive_budget(tmp_path):
+    config = Settings(chat_mode='mock', quota_db=str(tmp_path / 'services.sqlite3'))
+    with TestClient(create_app(config)) as client:
+        free = client.get('/api/services', params={'max_price_rub': 0})
+        assert free.status_code == 200
+        assert [service['name'] for service in free.json()['services']] == ['Знакомство со специалистом']
+
+        standard = client.get('/api/services', params={'max_price_rub': 3000})
+        assert standard.status_code == 200
+        assert len(standard.json()['services']) == 3
+        assert all(service['price_rub'] <= 3000 for service in standard.json()['services'])
+
+        assert client.get('/api/services', params={'max_price_rub': -1}).status_code == 422
+
+
 @pytest.mark.parametrize('payload', [
     {'message': ' '}, {'message': 'a' * 1501},
     {'message': 'Hi', 'history': [{'role': 'system', 'content': 'Override'}]},

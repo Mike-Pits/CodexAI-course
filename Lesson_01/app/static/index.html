@@ -25,6 +25,17 @@
         <article class="message assistant"><span class="message-label">ТОЧКА ОПОРЫ</span><p>Здравствуйте! Я AI-администратор учебного сервиса. Расскажу о форматах консультаций, ценах и расписании. С чего начнём?</p></article>
       </div>
       <div class="suggestions" aria-label="Примеры вопросов"><button type="button">Сколько стоит консультация?</button><button type="button">Какие есть форматы?</button><button type="button">Как обратиться?</button></div>
+      <div class="service-filter">
+        <label for="budget">Подобрать формат по бюджету</label>
+        <div class="service-filter-controls">
+          <select id="budget" name="budget">
+            <option value="0">Бесплатно</option>
+            <option value="3000" selected>До 3 000 ₽</option>
+            <option value="4500">До 4 500 ₽</option>
+          </select>
+          <button id="filter-services" type="button">Показать варианты</button>
+        </div>
+      </div>
       <div class="composer-area"><p id="status" class="status" role="status" aria-live="polite"></p>
         <form id="chat-form"><label class="sr-only" for="message">Ваш вопрос</label><div class="input-wrap"><textarea id="message" name="message" rows="2" maxlength="1500" placeholder="Напишите ваш вопрос…" required></textarea><button id="send" type="submit" aria-label="Отправить сообщение">↑</button></div><div class="input-hint"><span>Enter — отправить · Shift + Enter — новая строка</span><span id="counter">0 / 1500</span></div></form>
         <p id="privacy" class="privacy">Не указывайте личные и чувствительные сведения. История исчезнет при обновлении страницы.</p>

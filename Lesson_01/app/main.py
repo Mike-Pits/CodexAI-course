@@ -9,7 +9,7 @@ from typing import Literal
 
 import httpx
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -168,6 +168,12 @@ def create_app(settings: Settings | None = None, transport=None):
     async def health():
         return {'status': 'ok', 'configured': settings.chat_mode == 'mock' or bool(settings.api_key and settings.model),
                 'mode': settings.chat_mode}
+
+    @app.get('/api/services')
+    async def filter_services(max_price_rub: int = Query(ge=0, le=10000)):
+        """Return demo services that fit the selected inclusive budget."""
+        return {'services': [service for service in business['services']
+                             if service['price_rub'] <= max_price_rub]}
 
     @app.post('/api/chat', response_model=ChatOutput)
     async def chat(payload: ChatInput, request: Request):
