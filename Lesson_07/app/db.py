@@ -1,11 +1,76 @@
 """SQLite transactions and schema migration. Files belong to their meeting UUID."""
 
 import json
+import os
 import sqlite3
 import uuid
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from .config import DATA
+
+TURSO_DATABASE_URL = os.environ.get("TURSO_DATABASE_URL")
+TURSO_AUTH_TOKEN = os.environ.get("TURSO_AUTH_TOKEN")
+
+
+class _RemoteCursor:
+    def __init__(self, cursor):
+        self.cursor = cursor
+        self.columns = [column[0] for column in (cursor.description or [])]
+
+    def fetchone(self):
+        row = self.cursor.fetchone()
+        return _RemoteRow(zip(self.columns, row)) if row is not None else None
+
+    def fetchall(self):
+        return [_RemoteRow(zip(self.columns, row)) for row in self.cursor.fetchall()]
+
+    def __iter__(self):
+        return iter(self.fetchall())
+
+
+class _RemoteRow(dict):
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            return tuple(self.values())[key]
+        return super().__getitem__(key)
+
+
+class _RemoteConnection:
+    """DB-API adapter backed by an embedded Turso replica in Vercel's /tmp."""
+
+    def __init__(self):
+        import libsql
+
+        DATA.mkdir(parents=True, exist_ok=True, mode=0o700)
+        self.remote = not (TURSO_DATABASE_URL or "").startswith("file:")
+        if self.remote:
+            self.database = libsql.connect(
+                str(DATA / "turso-replica.sqlite3"),
+                sync_url=TURSO_DATABASE_URL,
+                auth_token=TURSO_AUTH_TOKEN or "",
+            )
+            self.database.sync()
+        else:
+            self.database = libsql.connect((TURSO_DATABASE_URL or "").removeprefix("file://"))
+
+    def execute(self, statement, parameters=()):
+        if statement.strip().upper().startswith("BEGIN"):
+            return _RemoteCursor(self.database.execute("SELECT 1 WHERE 0"))
+        return _RemoteCursor(self.database.execute(statement, tuple(parameters)))
+
+    def executescript(self, script):
+        self.database.executescript(script)
+
+    def commit(self):
+        self.database.commit()
+        if self.remote:
+            self.database.sync()
+
+    def rollback(self):
+        self.database.rollback()
+
+    def close(self):
+        self.database.close()
 
 
 def now():
@@ -18,6 +83,17 @@ def uid():
 
 @contextmanager
 def connect():
+    if TURSO_DATABASE_URL:
+        database = _RemoteConnection()
+        try:
+            yield database
+            database.commit()
+        except BaseException:
+            database.rollback()
+            raise
+        finally:
+            database.close()
+        return
     db = sqlite3.connect(DATA / "meetings.sqlite3", timeout=15)
     db.row_factory = sqlite3.Row
     db.execute("PRAGMA foreign_keys=ON")
@@ -35,7 +111,8 @@ def initialize():
     DATA.mkdir(parents=True, exist_ok=True, mode=0o700)
     (DATA / "files").mkdir(exist_ok=True, mode=0o700)
     with connect() as db:
-        db.execute("PRAGMA journal_mode=WAL")
+        if not TURSO_DATABASE_URL:
+            db.execute("PRAGMA journal_mode=WAL")
         version = db.execute("PRAGMA user_version").fetchone()[0]
         if version == 0:
             db.executescript("""

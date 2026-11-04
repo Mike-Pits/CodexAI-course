@@ -1,4 +1,6 @@
 .venv/
+node_modules/
+.vercel/
 .runtime/
 .models/
 data/

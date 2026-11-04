@@ -5,7 +5,5 @@ pydantic==2.13.5
 python-docx==1.2.0
 pypdf==6.19.0
 httpx==0.28.1
-faster-whisper==1.2.1
-pytest==9.1.1
-av==16.1.0
-nvidia-cudnn-cu12==9.27.0.42
+libsql==0.1.11
+vercel==0.12.2

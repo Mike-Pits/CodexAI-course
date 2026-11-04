@@ -1,6 +1,7 @@
 'use strict';
 const $ = id => document.getElementById(id);
 let current = null, dirty = false, timer, saving = null, resultDirty = false;
+let runtimeMode = 'local';
 const states = {queued:'В очереди',running:'Выполняется',done:'Завершено',error:'Ошибка',interrupted:'Прервано'};
 function node(tag, text, cls) { const e = document.createElement(tag); if(text !== undefined)e.textContent=text; if(cls)e.className=cls; return e; }
 function notice(message) { $('notice').textContent=message; $('notice').hidden=!message; }
@@ -8,6 +9,16 @@ async function api(path, options={}) {
   const response=await fetch('/api'+path,{...options,headers:{'X-Meetings-Client':'local',...(options.body && !(options.body instanceof FormData)?{'Content-Type':'application/json'}:{}),...options.headers}});
   if(!response.ok){ let data;try{data=await response.json();}catch{data={detail:'Ошибка сервера. Проверьте запуск приложения.'};} throw Error(typeof data.detail==='string'?data.detail:'Проверьте заполнение полей и допустимые значения.'); }
   return response.json();
+}
+const runtimeReady=api('/runtime').then(value=>{runtimeMode=value.mode;const footer=document.querySelector('aside footer small');if(footer)footer.textContent=runtimeMode==='vercel'?'Приватный Vercel Blob · Turso':'Записи сохраняются локально';if(runtimeMode==='vercel'){for(const id of ['document','audio-file'])$(id).parentElement.hidden=true;$('record').hidden=true;}return value;});
+async function kickCloudProcessing(item) {
+  if(runtimeMode!=='vercel')return item;
+  const jobId=item.cloud_job_id||item.jobs?.find(job=>['pipeline','analysis'].includes(job.kind)&&job.state==='queued')?.id;
+  if(!jobId)return item;
+  notice('Запись загружена. Выполняются распознавание речи и AI-анализ…');
+  const response=await fetch('/api/ai-process',{method:'POST',headers:{'Content-Type':'application/json','X-Meetings-Client':'local'},body:JSON.stringify({meeting_id:item.id,job_id:jobId})});
+  if(!response.ok){let data={};try{data=await response.json();}catch{}throw Error(data.detail||'Облачная обработка завершилась ошибкой.');}
+  return api('/meetings/'+item.id);
 }
 function action(button, fn) { button.addEventListener('click', async()=>{button.disabled=true;notice('');try{await fn();}catch(e){notice(e.message);}finally{button.disabled=false;if(button.id==='analyze'&&current)button.disabled=current.jobs.some(j=>['queued','running'].includes(j.state))||!!current.results.candidate;}}); }
 function localDate() { const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
@@ -45,7 +56,7 @@ function render(fields=false) {
     const box=node('div',undefined,'job'+(['error','interrupted'].includes(job.state)?' error':''));
     const jobName=job.kind==='analysis'?'AI-анализ':job.kind==='pipeline'?'Автоматический анализ':'Расшифровка';
     box.append(node('strong',`${jobName} · ${states[job.state]}`),node('div',job.error||job.stage));
-    if(['error','interrupted'].includes(job.state)){const retry=node('button','Повторить с текущими материалами');action(retry,async()=>{await flush();current=await api(`/meetings/${current.id}/jobs/${job.id}/retry`,{method:'POST'});render();});box.append(retry);}
+    if(['error','interrupted'].includes(job.state)){const retry=node('button','Повторить с текущими материалами');action(retry,async()=>{await flush();current=await api(`/meetings/${current.id}/jobs/${job.id}/retry`,{method:'POST'});render();current=await kickCloudProcessing(current);render(true);await list();});box.append(retry);}
     $('jobs').append(box);
   }
   renderMedia();
@@ -55,7 +66,7 @@ function render(fields=false) {
 function renderMedia() {
   const files=current.files.filter(f=>f.kind==='video');
   $('media-list').replaceChildren();
-  for(const f of files){const box=node('div',undefined,'media-item');box.append(node('strong',f.name),node('span',` ${Math.round(f.duration)} сек. · ${current.source==='cloud'?'из облака':'ручная загрузка'}`,'hint'));const player=node('video');player.controls=true;player.preload='metadata';player.src=`/api/meetings/${current.id}/files/${f.id}`;box.append(player);$('media-list').append(box);}
+  for(const f of files){const box=node('div',undefined,'media-item');box.append(node('strong',f.name),node('span',` ${Math.round(f.duration)} сек. · ${current.source==='cloud'?'из облака':'ручная загрузка'}`,'hint'));const player=node('video');player.controls=true;player.preload='metadata';player.src=runtimeMode==='vercel'?`/api/private-file?meeting=${encodeURIComponent(current.id)}&file=${encodeURIComponent(f.id)}`:`/api/meetings/${current.id}/files/${f.id}`;box.append(player);$('media-list').append(box);}
 }
 function renderAudio(busy) {
   const files=current.files.filter(f=>f.kind==='audio');
@@ -131,11 +142,11 @@ async function flush() {
 for(const id of ['title','date','text'])$(id).addEventListener('input',()=>{dirty=true;$('saved').textContent='Есть изменения';$('count').textContent=$('text').value.length.toLocaleString('ru')+' / 200 000';clearTimeout(timer);timer=setTimeout(()=>flush().catch(e=>notice(e.message)),1000);});
 function showNew(){ if(recorderState){notice('Сначала сохраните или удалите текущую запись.');return;} $('new-form').elements.date.value=localDate();$('new-dialog').showModal(); }
 $('new').onclick=showNew;$('start').onclick=showNew;$('cancel-new').onclick=()=>$('new-dialog').close();
-$('video-upload').onchange=async e=>{const file=e.target.files[0];if(!file)return;const label=e.target.closest('.dropzone');label.classList.add('loading');notice('');try{const form=new FormData();form.append('file',file);current=await api('/recordings',{method:'POST',body:form});resultDirty=false;render(true);await list();}catch(err){notice(err.message);}finally{label.classList.remove('loading');e.target.value='';}};
-$('cloud-form').onsubmit=async e=>{e.preventDefault();const button=e.target.querySelector('button');button.disabled=true;notice('');try{current=await api('/recordings/cloud',{method:'POST',body:JSON.stringify({url:$('cloud-url').value})});resultDirty=false;render(true);await list();notice(current.duplicate?'Эта запись уже добавлена. Открыт сохранённый результат.':'Файл получен. Анализ запущен автоматически.');$('cloud-url').value='';}catch(err){notice(err.message+' Если ссылка требует входа, скачайте видео и загрузите его вручную.');}finally{button.disabled=false;}};
+$('video-upload').onchange=async e=>{const file=e.target.files[0];if(!file)return;const label=e.target.closest('.dropzone');label.classList.add('loading');notice('');try{await runtimeReady;if(runtimeMode==='vercel'){const {upload}=await import('https://esm.sh/@vercel/blob@2.4.0/client');const blob=await upload(`recordings/${crypto.randomUUID()}-${file.name}`,file,{access:'private',handleUploadUrl:'/api/blob-upload',multipart:file.size>100_000_000,onUploadProgress:p=>notice(`Загрузка в приватное хранилище: ${Math.round(p.percentage)}%`)});current=await api('/recordings/blob',{method:'POST',body:JSON.stringify({url:blob.url,download_url:blob.downloadUrl||blob.url,pathname:blob.pathname,name:file.name,content_type:file.type||({'webm':'video/webm','mp4':'video/mp4'})[file.name.split('.').pop().toLowerCase()],size:file.size})});current=await kickCloudProcessing(current);}else{const form=new FormData();form.append('file',file);current=await api('/recordings',{method:'POST',body:form});}resultDirty=false;render(true);await list();notice('Готово: расшифровка и AI-анализ сохранены.');}catch(err){notice(err.message);}finally{label.classList.remove('loading');e.target.value='';}};
+$('cloud-form').onsubmit=async e=>{e.preventDefault();const button=e.target.querySelector('button');button.disabled=true;notice('');try{await runtimeReady;current=await api('/recordings/cloud',{method:'POST',body:JSON.stringify({url:$('cloud-url').value})});if(!current.duplicate)current=await kickCloudProcessing(current);resultDirty=false;render(true);await list();notice(current.duplicate?'Эта запись уже добавлена. Открыт сохранённый результат.':'Файл получен и обработан.');$('cloud-url').value='';}catch(err){notice(err.message+' Если ссылка требует входа, скачайте видео и загрузите его вручную.');}finally{button.disabled=false;}};
 document.querySelector('.brand').style.cursor='pointer';document.querySelector('.brand').onclick=async()=>{await flush();if(resultDirty&&!confirm('Перейти без сохранения правок результата?'))return;current=null;resultDirty=false;$('editor').hidden=true;$('welcome').hidden=false;await list();};
 $('new-form').onsubmit=async e=>{e.preventDefault();try{await flush();if(resultDirty && !confirm('Перейти без сохранения правок результата?'))return;const f=e.target;const created=await api('/meetings',{method:'POST',body:JSON.stringify({title:f.elements.title.value,meeting_date:f.elements.date.value})});resultDirty=false;current=created;render(true);await list();$('new-dialog').close();f.reset();}catch(err){notice(err.message);}};
-action($('analyze'),async()=>{await flush();current=await api(`/meetings/${current.id}/jobs?kind=analysis`,{method:'POST'});render();});
+action($('analyze'),async()=>{await flush();current=await api(`/meetings/${current.id}/jobs?kind=analysis`,{method:'POST'});render();current=await kickCloudProcessing(current);render(true);await list();});
 for(const id of ['document','audio-file'])$(id).onchange=async e=>{const file=e.target.files[0];if(!file)return;try{await flush();if(id==='document'&&current.text&&!confirm('Импорт заменит текущий текст. Продолжить?'))return;const form=new FormData();form.append('file',file);current=await api(`/meetings/${current.id}/files`,{method:'POST',body:form});render(true);notice('');}catch(err){notice(err.message);}finally{e.target.value='';}};
 action($('delete'),async()=>{if(!confirm('Удалить встречу, исходники, аудио и результаты? Скачанные копии останутся вне приложения.'))return;clearTimeout(timer);if(saving)await saving;await api('/meetings/'+current.id,{method:'DELETE'});cleanupRecording();current=null;dirty=false;resultDirty=false;$('editor').hidden=true;$('welcome').hidden=false;await list();});
 let recorderState=null;
@@ -167,4 +178,4 @@ $('stop').onclick=()=>recorderState?.recorder.stop();$('discard-record').onclick
 action($('save-record'),async()=>{const form=new FormData();form.append('file',recorderState.blob,'Запись.webm');current=await api(`/meetings/${current.id}/files?recording=true`,{method:'POST',body:form});cleanupRecording();render();});
 window.addEventListener('beforeunload',e=>{if(dirty||resultDirty||recorderState){e.preventDefault();e.returnValue='';}});
 setInterval(async()=>{if(!current||dirty||saving||resultDirty)return;try{const id=current.id;const updated=await api('/meetings/'+id);if(!current||current.id!==id||dirty||saving||resultDirty)return;const changed=JSON.stringify(updated)!==JSON.stringify(current);if(changed){const textChanged=updated.version!==current.version;current=updated;render(textChanged);await list();}}catch(e){notice(e.message);}},2000);
-list().catch(e=>notice(e.message));
+runtimeReady.then(()=>list()).catch(e=>notice(e.message));

@@ -10,8 +10,8 @@ from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 from . import db, imports, exports, cloud
-from .config import DATA, ROOT, AUDIO_LIMIT, DOCUMENT_LIMIT
-from .schemas import MeetingInput, ResultInput, CloudImport
+from .config import CLOUD, DATA, ROOT, AUDIO_LIMIT, DOCUMENT_LIMIT
+from .schemas import BlobRecording, MeetingInput, ResultInput, CloudImport
 
 
 @asynccontextmanager
@@ -22,7 +22,8 @@ async def lifespan(app):
 
 app = FastAPI(title="Итоги встреч", lifespan=lifespan)
 app.add_middleware(
-    TrustedHostMiddleware, allowed_hosts=["127.0.0.1", "localhost", "testserver"]
+    TrustedHostMiddleware,
+    allowed_hosts=["*"] if CLOUD else ["127.0.0.1", "localhost", "testserver"],
 )
 
 
@@ -32,19 +33,22 @@ async def local_requests(request: Request, call_next):
         origin = request.headers.get("origin")
         if origin and urlparse(origin).netloc != request.headers.get("host"):
             return JSONResponse(
-                {"detail": "Запрос разрешён только из локального приложения."},
+                {"detail": "Запрос разрешён только из этого приложения."},
                 status_code=403,
             )
         if request.headers.get("x-meetings-client") != "local":
             return JSONResponse(
-                {"detail": "Отсутствует заголовок локального приложения."},
+                {"detail": "Отсутствует заголовок приложения."},
                 status_code=403,
             )
     response = await call_next(request)
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["Referrer-Policy"] = "no-referrer"
     response.headers["Content-Security-Policy"] = (
-        "default-src 'self'; script-src 'self'; style-src 'self'; media-src 'self' blob:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'"
+        "default-src 'self'; script-src 'self' https://esm.sh; style-src 'self'; "
+        "media-src 'self' blob:; connect-src 'self' https://esm.sh "
+        "https://blob.vercel-storage.com https://*.blob.vercel-storage.com; "
+        "frame-ancestors 'none'; base-uri 'none'"
     )
     return response
 
@@ -62,6 +66,11 @@ async def invalid(request, error):
 @app.get("/")
 def index():
     return FileResponse(ROOT / "app/static/index.html")
+
+
+@app.get("/api/runtime")
+def runtime():
+    return {"mode": "vercel" if CLOUD else "local"}
 
 
 @app.get("/api/meetings")
@@ -182,8 +191,76 @@ def _save_recording(
         raise
 
 
+def _register_blob_recording(
+    blob: BlobRecording,
+    source: str,
+    source_url: str | None = None,
+    source_key: str | None = None,
+):
+    if not CLOUD:
+        raise ValueError("Blob-регистрация доступна только в Vercel-режиме.")
+    parsed = urlparse(blob.url)
+    if parsed.scheme != "https" or not parsed.hostname or not parsed.hostname.endswith(
+        ".blob.vercel-storage.com"
+    ):
+        raise ValueError("Получен недопустимый адрес Vercel Blob.")
+    suffix = Path(blob.name).suffix.lower()
+    expected = {".webm": "video/webm", ".mp4": "video/mp4"}
+    if suffix not in expected or expected[suffix] != blob.content_type:
+        raise ValueError("Поддерживаются видеозаписи WebM и MP4.")
+    ident, fid, jid = db.uid(), db.uid(), db.uid()
+    with db.connect() as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        now = db.now()
+        conn.execute(
+            "INSERT INTO meetings(id,title,meeting_date,text,created_at,updated_at,source,source_url,source_key) VALUES(?,?,?,?,?,?,?,?,?)",
+            (
+                ident,
+                _recording_title(blob.name),
+                date.today().isoformat(),
+                "",
+                now,
+                now,
+                source,
+                source_url,
+                source_key,
+            ),
+        )
+        conn.execute(
+            "INSERT INTO files(id,meeting_id,name,path,kind,duration,created_at,checksum) VALUES(?,?,?,?,?,?,?,?)",
+            (fid, ident, Path(blob.name).name, blob.url, "video", 0, now, None),
+        )
+        conn.execute(
+            "INSERT INTO jobs(id,meeting_id,kind,state,stage,source_text,source_date,source_version,file_id,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)",
+            (
+                jid,
+                ident,
+                "pipeline",
+                "queued",
+                "Загружен в приватное хранилище",
+                "",
+                date.today().isoformat(),
+                0,
+                fid,
+                now,
+            ),
+        )
+    result = db.details(ident)
+    result["cloud_job_id"] = jid
+    return result
+
+
+@app.post("/api/recordings/blob", status_code=201)
+def register_blob_recording(body: BlobRecording):
+    return _register_blob_recording(body, "manual")
+
+
 @app.post("/api/recordings", status_code=201)
 def upload_recording(file: UploadFile = File(...)):
+    if CLOUD:
+        raise HTTPException(
+            409, "В Vercel-режиме используйте прямую загрузку в Blob."
+        )
     suffix = Path(file.filename or "").suffix.lower()
     if suffix not in (".webm", ".mp4"):
         raise ValueError("Поддерживаются видеозаписи WebM и MP4.")
@@ -222,6 +299,35 @@ def import_recording(body: CloudImport):
     incoming = DATA / "incoming" / db.uid()
     try:
         path, filename, normalized = cloud.download(body.url, incoming)
+        if CLOUD:
+            from vercel.blob.sync import put_blob
+
+            suffix = Path(filename).suffix.lower()
+            content_type = "video/webm" if suffix == ".webm" else "video/mp4"
+            size = path.stat().st_size
+            with path.open("rb") as source:
+                stored = put_blob(
+                    f"recordings/{db.uid()}{suffix}",
+                    source,
+                    access="private",
+                    content_length=size,
+                    content_type=content_type,
+                )
+            result = _register_blob_recording(
+                BlobRecording(
+                    url=stored.url,
+                    download_url=stored.download_url,
+                    pathname=stored.pathname,
+                    name=filename,
+                    content_type=content_type,
+                    size=size,
+                ),
+                "cloud",
+                normalized,
+                source_key,
+            )
+            shutil.rmtree(incoming, ignore_errors=True)
+            return result
         result = _save_recording(path, filename, "cloud", normalized, source_key)
         shutil.rmtree(incoming, ignore_errors=True)
         return result
@@ -262,6 +368,11 @@ def update(ident: str, body: MeetingInput):
 
 @app.post("/api/meetings/{ident}/files")
 def upload(ident: str, file: UploadFile = File(...), recording: bool = False):
+    if CLOUD:
+        raise HTTPException(
+            409,
+            "Документы и аудио доступны в локальном профиле; Vercel-профиль принимает видеозаписи.",
+        )
     with db.connect() as conn:
         current = db.meeting(conn, ident)
     suffix = Path(file.filename or "").suffix.lower()
@@ -338,6 +449,11 @@ def audio_file(ident: str, fid: str):
         ).fetchone()
         if not row:
             raise LookupError("Файл не найден")
+    if CLOUD:
+        raise HTTPException(
+            403,
+            "Исходник хранится приватно в Vercel Blob и не публикуется через API.",
+        )
     return FileResponse(DATA / row["path"])
 
 
@@ -487,6 +603,18 @@ def delete(ident: str):
         if not row:
             raise LookupError("Встреча не найдена")
         conn.execute("UPDATE meetings SET deleted=1 WHERE id=?", (ident,))
+    if CLOUD:
+        with db.connect() as conn:
+            paths = [
+                row["path"]
+                for row in conn.execute(
+                    "SELECT path FROM files WHERE meeting_id=?", (ident,)
+                ).fetchall()
+            ]
+        if paths:
+            from vercel.blob.sync import delete_blob
+
+            delete_blob(paths)
     folder = DATA / "files" / ident
     try:
         if folder.exists():

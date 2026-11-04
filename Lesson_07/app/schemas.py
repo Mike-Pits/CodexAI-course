@@ -18,6 +18,15 @@ class CloudImport(Strict):
     url: str = Field(min_length=8, max_length=4096)
 
 
+class BlobRecording(Strict):
+    url: str = Field(min_length=16, max_length=4096)
+    download_url: str = Field(min_length=16, max_length=4096)
+    pathname: str = Field(min_length=1, max_length=1024)
+    name: str = Field(min_length=1, max_length=255)
+    content_type: Literal["video/webm", "video/mp4"]
+    size: int = Field(gt=0, le=500_000_000)
+
+
 class Decision(Strict):
     text: str = Field(min_length=1)
     quote: str = Field(min_length=1)
