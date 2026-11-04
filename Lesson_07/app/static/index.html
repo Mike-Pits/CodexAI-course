@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Аналитика встреч</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script defer src="/static/app.js"></script>
+</head>
+<body>
+<aside>
+  <div class="brand"><span class="logo">И</span><div><strong>Аналитика встреч</strong><small>AI-конспекты видеовстреч</small></div></div>
+  <button id="new" class="primary wide">＋ Новая встреча</button>
+  <h2 class="eyebrow">ПОСЛЕДНИЕ ВСТРЕЧИ</h2>
+  <nav id="meetings" aria-label="Встречи"></nav>
+  <footer><span class="dot"></span> Фоновая обработка<br><small>Записи сохраняются локально</small></footer>
+</aside>
+<main>
+  <div id="notice" role="alert" hidden></div>
+  <section id="welcome" class="dashboard">
+    <p class="eyebrow">AI АНАЛИЗ ВИДЕОВСТРЕЧ</p>
+    <div class="dashboard-head"><div><h1>От записи к решениям<br>без ручной обработки</h1><p class="lead">Добавьте WebM или MP4 — расшифровка и AI-анализ запустятся автоматически.</p></div><button id="start">Создать встречу из текста</button></div>
+    <div class="metrics"><article><b id="processed-count">0</b><span>обработано встреч</span></article><article><b id="meeting-count">0</b><span>всего записей</span></article><article><b id="active-count">0</b><span>сейчас в обработке</span></article></div>
+    <div class="ingest-grid">
+      <section class="panel upload-card"><div><p class="eyebrow">ВХОДЯЩИЕ ЗАПИСИ</p><h2>Загрузить видео</h2><p>Короткая запись до 5 минут. После загрузки отдельная команда не нужна.</p></div><label class="dropzone">Выберите WebM или MP4<input id="video-upload" type="file" accept=".webm,.mp4,video/webm,video/mp4" hidden><small>до 500 МБ</small></label></section>
+      <section class="panel upload-card"><div><p class="eyebrow">ИЗ ОБЛАКА</p><h2>Добавить по ссылке</h2><p>Подходит публичная HTTPS-ссылка, по которой файл скачивается без авторизации.</p></div><form id="cloud-form"><label for="cloud-url">Ссылка на видеозапись<input id="cloud-url" type="url" required placeholder="https://…/meeting.webm"></label><button class="primary" type="submit">Добавить из облака</button></form></section>
+    </div>
+    <div class="row"><div><p class="eyebrow">НЕДАВНИЕ РЕЗУЛЬТАТЫ</p><h2>Последние встречи</h2></div></div>
+    <div id="recent-meetings" class="recent-grid"></div>
+  </section>
+  <section id="editor" hidden>
+    <header><div><p class="eyebrow">КАРТОЧКА ВСТРЕЧИ</p><h1 id="heading"></h1></div><button id="delete" class="danger">Удалить встречу</button></header>
+    <div class="meta"><label>Название<input id="title" maxlength="200" placeholder="Например, обсуждение требований"></label><label>Дата встречи<input id="date" type="date"></label><span id="source-label" class="tag"></span><span id="saved" role="status">Сохранено</span></div>
+    <div class="panel"><div class="row"><h2>Материалы встречи</h2><span class="tag">Сохранено в проекте</span></div><div class="row wrap"><label class="button file-button">Загрузить документ<input id="document" type="file" accept=".txt,.docx,.pdf" hidden></label><label class="button file-button">Загрузить аудио<input id="audio-file" type="file" accept=".mp3,.wav,.m4a" hidden></label><button id="record">Записать встречу</button></div><p class="hint">TXT, DOCX, PDF до 50 МБ · MP3, WAV, M4A до 500 МБ и 120 минут</p>
+      <div id="recorder" hidden><p id="record-state" role="status"></p><div class="row"><button id="pause">Пауза</button><button id="stop">Остановить</button><button id="save-record" hidden>Сохранить запись</button><button id="discard-record">Удалить запись</button></div><audio id="record-preview" controls hidden></audio></div>
+      <div id="media-list"></div><div id="audio-list"></div><label for="text">Текст для анализа</label><textarea id="text" rows="13" maxlength="200000" placeholder="После распознавания здесь появится текст встречи."></textarea><div class="row"><span id="count" class="hint">0 / 200 000</span><button id="analyze" class="primary">Проанализировать текст →</button></div>
+    </div>
+    <div id="jobs" aria-live="polite"></div><div id="results"></div>
+  </section>
+</main>
+<dialog id="new-dialog"><form id="new-form"><h2>Новая встреча</h2><label>Название<input name="title" required maxlength="200" autofocus></label><label>Дата встречи<input name="date" type="date" required></label><div class="row"><button type="button" id="cancel-new">Отмена</button><button class="primary" type="submit">Создать</button></div></form></dialog>
+</body>
+</html>

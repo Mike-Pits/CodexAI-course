@@ -1,0 +1,4 @@
+interface:
+  display_name: "Lite + Pro Homework"
+  short_description: "Completes Lite and Pro homework in sequence"
+  default_prompt: "Use $homework-lite-pro to complete the Lite and Pro assignments in the current project."

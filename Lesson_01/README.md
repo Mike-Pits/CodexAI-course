@@ -12,7 +12,6 @@
 
 `LLM_BASE_URL` — базовый URL, обычно с `/v1`, без `/chat/completions` или `/responses`. `LLM_TOKEN_PARAMETER` выбирает `max_tokens` либо `max_completion_tokens` для Chat Completions. `LLM_REASONING_EFFORT` необязателен: оставьте пустым, если модель не поддерживает параметр.
 
-Для прямого OpenAI укажите `LLM_BASE_URL=https://api.openai.com/v1`, `LLM_API_FORMAT=responses` и соответствующие ключ/модель. Старые `OPENAI_*` используются только при полном отсутствии `LLM_BASE_URL`, `LLM_API_KEY` и `LLM_MODEL`. При наличии новых настроек даже пустой `LLM_API_KEY` не подставляется из старого ключа: секрет OpenAI не будет отправлен другому сервису автоматически.
 
 Документация VseLLM: https://vsellm.ru/docs. Доступ с вашим ключом ещё не проверен.
 
