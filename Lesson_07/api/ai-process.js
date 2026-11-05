@@ -1,8 +1,10 @@
 import crypto from 'node:crypto';
 import { createClient } from '@libsql/client';
 import { get } from '@vercel/blob';
-import { experimental_transcribe as transcribe, generateText, Output } from 'ai';
+import { transcribe, generateText, Output } from 'ai';
 import { z } from 'zod';
+
+export const DEFAULT_TRANSCRIPTION_MODEL = 'openai/gpt-4o-mini-transcribe';
 
 const resultSchema = z.object({
   summary: z.string(),
@@ -26,7 +28,25 @@ function database() {
   return createClient({ url: process.env.TURSO_DATABASE_URL, authToken: process.env.TURSO_AUTH_TOKEN });
 }
 
-export default async function handler(request) {
+export function processingErrorMessage(error) {
+  const messages = {
+    RecordingTooLong: 'Запись длиннее 5 минут.',
+    EmptyTranscript: 'В записи не удалось распознать речь.',
+    BlobNotFound: 'Исходная запись не найдена.',
+  };
+  const code = error instanceof Error ? error.message : 'ProcessingError';
+  if (messages[code]) return messages[code];
+  const diagnostic = [error?.message, error?.cause?.message].filter(Boolean).join(' ');
+  if (
+    error?.statusCode === 403 &&
+    /customer_verification_required|valid credit card/i.test(diagnostic)
+  ) {
+    return 'AI Gateway требует привязать платёжную карту в Vercel, чтобы включить бесплатные AI-кредиты.';
+  }
+  return `Облачная обработка недоступна. Тип: ${error?.name || 'Error'}`;
+}
+
+async function fetch(request) {
   if (request.method !== 'POST') return Response.json({ detail: 'Method not allowed' }, { status: 405 });
   const origin = request.headers.get('origin');
   if (origin && new URL(origin).host !== new URL(request.url).host) return Response.json({ detail: 'Forbidden' }, { status: 403 });
@@ -50,7 +70,7 @@ export default async function handler(request) {
       const bytes = Buffer.from(await new Response(stored.stream).arrayBuffer());
       checksum = crypto.createHash('sha256').update(bytes).digest('hex');
       const transcript = await transcribe({
-        model: process.env.MEETINGS_TRANSCRIPTION_MODEL || 'assemblyai/best', audio: bytes, maxRetries: 2,
+        model: process.env.MEETINGS_TRANSCRIPTION_MODEL || DEFAULT_TRANSCRIPTION_MODEL, audio: bytes, maxRetries: 2,
       });
       text=transcript.text;duration=transcript.durationInSeconds || 0;
       if (!text.trim()) throw new Error('EmptyTranscript');
@@ -81,12 +101,12 @@ export default async function handler(request) {
     await client.batch(statements, 'write');
     return Response.json({ ok: true });
   } catch (error) {
-    const messages = { RecordingTooLong: 'Запись длиннее 5 минут.', EmptyTranscript: 'В записи не удалось распознать речь.', BlobNotFound: 'Исходная запись не найдена.' };
-    const code = error instanceof Error ? error.message : 'ProcessingError';
-    const message = messages[code] || `Облачная обработка недоступна. Тип: ${error?.name || 'Error'}`;
+    const message = processingErrorMessage(error);
     await client.execute({ sql: "UPDATE jobs SET state='error',stage='Ошибка',error=?,finished_at=? WHERE id=?", args: [message, new Date().toISOString(), jobId] });
     return Response.json({ detail: message }, { status: 500 });
   } finally {
     client.close();
   }
 }
+
+export default { fetch };

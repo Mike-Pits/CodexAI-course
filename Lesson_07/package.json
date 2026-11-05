@@ -3,6 +3,9 @@
   "private": true,
   "type": "module",
   "engines": { "node": ">=22" },
+  "scripts": {
+    "test:vercel": "node --test tests/vercel-handlers.test.mjs"
+  },
   "dependencies": {
     "@libsql/client": "^0.15.15",
     "@vercel/blob": "^2.4.0",

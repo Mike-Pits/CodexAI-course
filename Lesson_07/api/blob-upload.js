@@ -2,7 +2,7 @@ import { handleUpload } from '@vercel/blob/client';
 
 const allowed = new Set(['video/webm', 'video/mp4']);
 
-export default async function handler(request) {
+async function fetch(request) {
   if (request.method !== 'POST') {
     return Response.json({ error: 'Method not allowed' }, { status: 405 });
   }
@@ -32,3 +32,5 @@ export default async function handler(request) {
     return Response.json({ error: error instanceof Error ? error.message : 'Upload failed' }, { status: 400 });
   }
 }
+
+export default { fetch };

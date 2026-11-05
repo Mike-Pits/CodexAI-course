@@ -9,6 +9,8 @@ __pycache__/
 *.pyc
 .env
 .env.*
-!.env.example
 .~lock.*#
 delivery/
+.vercel
+.env*
+!.env.example

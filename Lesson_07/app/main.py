@@ -14,6 +14,15 @@ from .config import CLOUD, DATA, ROOT, AUDIO_LIMIT, DOCUMENT_LIMIT
 from .schemas import BlobRecording, MeetingInput, ResultInput, CloudImport
 
 
+CONTENT_SECURITY_POLICY = (
+    "default-src 'self'; script-src 'self' https://esm.sh; style-src 'self'; "
+    "media-src 'self' blob:; connect-src 'self' https://esm.sh "
+    "https://vercel.com https://blob.vercel-storage.com "
+    "https://*.blob.vercel-storage.com; "
+    "frame-ancestors 'none'; base-uri 'none'"
+)
+
+
 @asynccontextmanager
 async def lifespan(app):
     db.initialize()
@@ -44,12 +53,7 @@ async def local_requests(request: Request, call_next):
     response = await call_next(request)
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["Referrer-Policy"] = "no-referrer"
-    response.headers["Content-Security-Policy"] = (
-        "default-src 'self'; script-src 'self' https://esm.sh; style-src 'self'; "
-        "media-src 'self' blob:; connect-src 'self' https://esm.sh "
-        "https://blob.vercel-storage.com https://*.blob.vercel-storage.com; "
-        "frame-ancestors 'none'; base-uri 'none'"
-    )
+    response.headers["Content-Security-Policy"] = CONTENT_SECURITY_POLICY
     return response
 
 

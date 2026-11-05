@@ -5,7 +5,7 @@ function database() {
   return createClient({ url: process.env.TURSO_DATABASE_URL, authToken: process.env.TURSO_AUTH_TOKEN });
 }
 
-export default async function handler(request) {
+async function fetch(request) {
   if (request.method !== 'GET' && request.method !== 'HEAD') return new Response('Method not allowed', { status: 405 });
   const url = new URL(request.url);
   const meeting = url.searchParams.get('meeting');
@@ -39,3 +39,5 @@ export default async function handler(request) {
     client.close();
   }
 }
+
+export default { fetch };

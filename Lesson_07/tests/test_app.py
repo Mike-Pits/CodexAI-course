@@ -94,6 +94,27 @@ def test_cloud_import_rejects_unsafe_urls(client, url):
     assert response.status_code == 400
 
 
+def test_cloud_share_links_resolve_to_direct_downloads():
+    google = cloud.resolve_share_url(
+        "https://drive.google.com/file/d/abc_123-XYZ/view?usp=sharing"
+    )
+    assert google == (
+        "https://drive.usercontent.google.com/download"
+        "?id=abc_123-XYZ&export=download&confirm=t"
+    )
+
+    yandex = cloud.resolve_share_url(
+        "https://disk.yandex.ru/i/public-key",
+        "https://downloader.disk.yandex.ru/disk/example.mp4?download=1",
+    )
+    assert yandex == "https://downloader.disk.yandex.ru/disk/example.mp4?download=1"
+
+
+def test_vercel_blob_upload_endpoint_is_allowed_by_csp():
+    assert "connect-src" in main.CONTENT_SECURITY_POLICY
+    assert "https://vercel.com" in main.CONTENT_SECURITY_POLICY
+
+
 def candidate(client, monkeypatch):
     m = create(client)
     monkeypatch.setattr(ai, "analyze", lambda text, day, progress: fake_result(text))
