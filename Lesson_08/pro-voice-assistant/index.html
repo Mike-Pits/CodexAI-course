@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Учебный голосовой помощник для проверки расписания консультаций"
+    />
+    <title>Голосовой помощник консультаций</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="#" aria-label="Голосовой помощник — главная">
+          <span class="brand-mark" aria-hidden="true">A</span>
+          <span>
+            <strong>Учебный ассистент</strong>
+            <small>Проверка расписания</small>
+          </span>
+        </a>
+        <div class="connection" id="connectionBadge" data-connected="false">
+          <span class="connection-dot" aria-hidden="true"></span>
+          <span id="connectionText">Нет соединения</span>
+        </div>
+      </header>
+
+      <section class="hero" aria-labelledby="pageTitle">
+        <div>
+          <p class="eyebrow">Голосовая учебная консультация</p>
+          <h1 id="pageTitle">Спросите о свободном времени</h1>
+          <p class="lead">
+            Помощник распознает просьбу, проверит учебное расписание и ответит голосом.
+            Запись на консультацию не оформляется.
+          </p>
+        </div>
+        <div class="schedule-card" aria-label="Данные учебного расписания">
+          <p class="schedule-label">Расписание для демонстрации</p>
+          <dl>
+            <div><dt>Завтра · 18:30</dt><dd class="available">Свободно</dd></div>
+            <div><dt>Завтра · 19:00</dt><dd class="busy">Занято</dd></div>
+            <div><dt>Послезавтра</dt><dd class="unknown">Нет данных</dd></div>
+          </dl>
+        </div>
+      </section>
+
+      <section class="workspace" aria-label="Голосовой разговор">
+        <div class="conversation-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="section-kicker">Диалог</p>
+              <h2>Разговор с помощником</h2>
+            </div>
+            <button class="text-button" id="clearButton" type="button" disabled>
+              Очистить
+            </button>
+          </div>
+
+          <div class="transcript" id="transcript" aria-live="polite" aria-label="История диалога">
+            <div class="empty-state" id="emptyState">
+              <span class="empty-icon" aria-hidden="true">✦</span>
+              <p>Начните разговор и произнесите просьбу</p>
+              <small>Например: «Можно завтра после шести?»</small>
+            </div>
+          </div>
+
+          <form class="text-fallback" id="textForm">
+            <label class="sr-only" for="textInput">Введите просьбу текстом</label>
+            <input
+              id="textInput"
+              name="request"
+              type="text"
+              placeholder="Или введите просьбу текстом"
+              autocomplete="off"
+              disabled
+            />
+            <button id="sendButton" type="submit" disabled>Отправить</button>
+          </form>
+        </div>
+
+        <aside class="control-panel" aria-label="Управление разговором">
+          <div class="status-visual" id="statusVisual" data-state="idle" aria-hidden="true">
+            <span></span><span></span><span></span>
+          </div>
+          <p class="status-label">Текущий этап</p>
+          <h2 class="status-title" id="statusTitle">Разговор не начат</h2>
+          <p class="status-description" id="statusDescription">
+            Запустите новую голосовую сессию. История начнётся с чистого состояния.
+          </p>
+
+          <div class="primary-controls">
+            <button class="primary-button" id="startSessionButton" type="button">
+              Начать разговор
+            </button>
+            <button class="mic-button" id="micButton" type="button" disabled>
+              <span class="mic-icon" aria-hidden="true"></span>
+              <span id="micButtonText">Говорить</span>
+            </button>
+            <button class="secondary-button" id="endSessionButton" type="button" disabled>
+              Завершить разговор
+            </button>
+          </div>
+
+          <div class="error-actions" id="errorActions" hidden>
+            <button id="retryButton" type="button">Повторить запрос</button>
+            <button id="newSessionButton" type="button">Новая сессия</button>
+          </div>
+
+          <div class="demo-tools">
+            <p>Проверка сценария ошибки</p>
+            <button id="simulateErrorButton" type="button" disabled>
+              Сымитировать сбой расписания
+            </button>
+          </div>
+        </aside>
+      </section>
+
+      <footer>
+        <p>Архитектура STT → AI агент → расписание → TTS</p>
+        <p>Текст ответа передаётся потоком</p>
+      </footer>
+    </main>
+
+    <template id="messageTemplate">
+      <article class="message">
+        <div class="message-meta"></div>
+        <p class="message-text"></p>
+      </article>
+    </template>
+
+    <script src="app.js"></script>
+  </body>
+</html>
