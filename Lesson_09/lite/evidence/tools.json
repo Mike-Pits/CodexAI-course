@@ -1,0 +1,406 @@
+{
+  "tools": [
+    {
+      "name": "get_air_quality",
+      "description": "Get air quality data and forecasts from Open-Meteo Air Quality API.\n\nArgs:\n    latitude: Latitude coordinate (-90 to 90)\n    longitude: Longitude coordinate (-180 to 180)\n    timezone: Timezone (e.g., 'America/New_York', 'auto' for automatic)\n    hourly: Comma-separated air quality variables\n    domains: Model domain - auto, cams_global, cams_europe\n\nReturns:\n    AirQualityResponse: Pydantic model with air quality data\n\nExample:\n    air = await get_air_quality(34.0522, -118.2437)\n    if air.hourly and air.hourly.us_aqi:\n        aqi = air.hourly.us_aqi[0]\n        print(f\"US AQI: {aqi}\")\n",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "latitude": {
+            "type": "number"
+          },
+          "longitude": {
+            "type": "number"
+          },
+          "timezone": {
+            "type": "string",
+            "default": "auto"
+          },
+          "hourly": {
+            "type": "string"
+          },
+          "domains": {
+            "type": "string",
+            "default": "auto"
+          }
+        },
+        "required": [
+          "latitude",
+          "longitude"
+        ]
+      }
+    },
+    {
+      "name": "batch_get_air_quality",
+      "description": "Get air quality data for multiple locations in a single API call.\n\nThis tool uses Open-Meteo's native batch support to fetch air quality data\nfor many locations at once. Useful for comparing pollution levels across cities.\n\nArgs:\n    latitudes: Comma-separated latitude values for all locations.\n        Example: \"51.51,48.86,52.52\"\n        Must have the same number of values as longitudes.\n    longitudes: Comma-separated longitude values for all locations.\n        Example: \"-0.13,2.35,13.41\"\n        Must have the same number of values as latitudes.\n    timezone: Timezone name or \"auto\" for automatic detection per location\n    hourly: Comma-separated air quality variables. If not provided, defaults to:\n        pm10, pm2_5, carbon_monoxide, nitrogen_dioxide, sulphur_dioxide, ozone, us_aqi, european_aqi\n    domains: Model domain - \"auto\" (default), \"cams_global\", \"cams_europe\"\n\nReturns:\n    BatchAirQualityResponse: Contains:\n        - results: List of BatchAirQualityItem, each with location_index and air_quality\n        - total_locations: Number of locations queried\n\nTips for LLMs:\n    - Use batch_geocode_locations first to get coordinates\n    - Results are in the SAME ORDER as the input coordinates\n    - Useful for \"compare air quality across cities\" queries\n    - All locations share the same hourly variables and domain settings\n\nExample:\n    # Compare air quality across 3 cities\n    result = await batch_get_air_quality(\n        latitudes=\"51.51,48.86,34.05\",\n        longitudes=\"-0.13,2.35,-118.24\",\n        hourly=\"pm2_5,us_aqi\"\n    )\n    for item in result.results:\n        aqi = item.air_quality.hourly.us_aqi[0]\n        print(f\"Location {item.location_index}: AQI {aqi}\")\n",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "latitudes": {
+            "type": "string"
+          },
+          "longitudes": {
+            "type": "string"
+          },
+          "timezone": {
+            "type": "string",
+            "default": "auto"
+          },
+          "hourly": {
+            "type": "string"
+          },
+          "domains": {
+            "type": "string",
+            "default": "auto"
+          }
+        },
+        "required": [
+          "latitudes",
+          "longitudes"
+        ]
+      }
+    },
+    {
+      "name": "get_weather_forecast",
+      "description": "Get comprehensive weather forecast with current conditions, hourly, and daily forecasts.\n\nThis tool provides detailed weather forecasts from Open-Meteo API with 50+ weather variables.\nUse this for answering questions about current weather, future forecasts, or detailed conditions.\n\nArgs:\n    latitude: Latitude coordinate in decimal degrees (-90 to 90). Use geocode_location to find coordinates.\n    longitude: Longitude coordinate in decimal degrees (-180 to 180). Use geocode_location to find coordinates.\n    temperature_unit: Temperature unit. Options: \"celsius\" (default), \"fahrenheit\"\n    wind_speed_unit: Wind speed unit. Options: \"kmh\" (default), \"ms\", \"mph\", \"kn\"\n    precipitation_unit: Precipitation unit. Options: \"mm\" (default), \"inch\"\n    timezone: Timezone name (e.g., \"America/New_York\", \"Europe/London\") or \"auto\" for automatic detection\n    forecast_days: Number of forecast days (1-16). Default is 7.\n    current_weather: Set to True to include current weather conditions (recommended)\n    hourly: Comma-separated list of hourly variables. Popular options:\n        - temperature_2m: Temperature at 2m height\n        - precipitation: Total precipitation (rain + snow)\n        - rain: Rain only\n        - snowfall: Snowfall amount\n        - cloud_cover: Cloud cover percentage (0-100)\n        - wind_speed_10m, wind_direction_10m: Wind at 10m height\n        - relative_humidity_2m: Relative humidity\n        - pressure_msl: Sea level pressure\n        - visibility: Visibility distance\n        - uv_index: UV index\n    daily: Comma-separated list of daily variables. Popular options:\n        - temperature_2m_max, temperature_2m_min: Daily temperature range\n        - precipitation_sum: Total daily precipitation\n        - rain_sum: Total daily rain\n        - sunrise, sunset: Sun times\n        - wind_speed_10m_max: Maximum daily wind speed\n        - precipitation_hours: Hours with precipitation\n\nReturns:\n    WeatherForecast: A Pydantic model containing:\n        - latitude, longitude: Actual coordinates used\n        - current_weather: Current conditions (temperature, wind, weather code)\n        - hourly: Hourly forecast data (if requested)\n        - daily: Daily forecast data (if requested)\n        - timezone: Timezone information\n\nTips for LLMs:\n    - Always use current_weather=True for \"what's the weather\" questions\n    - Request hourly data for detailed forecasts (e.g., \"hourly rain predictions\")\n    - Request daily data for multi-day forecasts (e.g., \"week ahead\")\n    - Weather codes: 0=clear, 1-3=partly cloudy, 45/48=fog, 51-57=drizzle, 61-67=rain, 71-77=snow, 80-82=rain showers, 95-99=thunderstorm\n\nExample:\n    # Get current weather for London\n    forecast = await get_weather_forecast(51.5072, -0.1276, current_weather=True)\n    temp = forecast.current_weather.temperature\n\n    # Get detailed 3-day forecast with hourly data\n    forecast = await get_weather_forecast(\n        51.5072, -0.1276,\n        forecast_days=3,\n        hourly=\"temperature_2m,precipitation,wind_speed_10m\",\n        daily=\"temperature_2m_max,temperature_2m_min,precipitation_sum\"\n    )\n",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "latitude": {
+            "type": "number"
+          },
+          "longitude": {
+            "type": "number"
+          },
+          "temperature_unit": {
+            "type": "string",
+            "default": "celsius"
+          },
+          "wind_speed_unit": {
+            "type": "string",
+            "default": "kmh"
+          },
+          "precipitation_unit": {
+            "type": "string",
+            "default": "mm"
+          },
+          "timezone": {
+            "type": "string",
+            "default": "auto"
+          },
+          "forecast_days": {
+            "type": "integer",
+            "default": 7
+          },
+          "current_weather": {
+            "type": "boolean",
+            "default": true
+          },
+          "hourly": {
+            "type": "string"
+          },
+          "daily": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "latitude",
+          "longitude"
+        ]
+      }
+    },
+    {
+      "name": "batch_get_weather_forecasts",
+      "description": "Get weather forecasts for multiple locations in a single API call.\n\nThis tool uses Open-Meteo's native batch support to fetch forecasts for up to\n1000 locations in ONE HTTP request. This is dramatically faster than calling\nget_weather_forecast repeatedly.\n\nUse batch_geocode_locations first to get coordinates, then pass them here.\n\nArgs:\n    latitudes: Comma-separated latitude values for all locations.\n        Example: \"51.51,48.86,52.52\" (London, Paris, Berlin)\n        Must have the same number of values as longitudes.\n    longitudes: Comma-separated longitude values for all locations.\n        Example: \"-0.13,2.35,13.41\" (London, Paris, Berlin)\n        Must have the same number of values as latitudes.\n    temperature_unit: Temperature unit - \"celsius\" (default) or \"fahrenheit\"\n    wind_speed_unit: Wind speed unit - \"kmh\" (default), \"ms\", \"mph\", \"kn\"\n    precipitation_unit: Precipitation unit - \"mm\" (default) or \"inch\"\n    timezone: Timezone name or \"auto\" for automatic detection per location\n    forecast_days: Number of forecast days (1-16). Default is 7.\n    current_weather: Include current weather conditions. Default is True.\n    hourly: Comma-separated hourly variables (same as get_weather_forecast).\n        Popular: temperature_2m, precipitation, wind_speed_10m, cloud_cover\n    daily: Comma-separated daily variables (same as get_weather_forecast).\n        Popular: temperature_2m_max, temperature_2m_min, precipitation_sum\n\nReturns:\n    BatchWeatherForecastResponse: Contains:\n        - results: List of BatchWeatherForecastItem, each with location_index and forecast\n        - total_locations: Number of locations queried\n\nTips for LLMs:\n    - ALWAYS use batch_geocode_locations first to get coordinates\n    - The forecasts are returned in the SAME ORDER as the input coordinates\n    - All locations share the same forecast parameters (hourly, daily, units)\n    - For different parameters per location, make separate get_weather_forecast calls\n    - Maximum ~1000 locations per call (Open-Meteo API limit)\n    - The latitudes and longitudes strings must have equal numbers of comma-separated values\n\nWorkflow for \"What's the weather across the UK?\":\n    1. batch_geocode_locations(\"London,Manchester,Edinburgh,Cardiff,Belfast,Birmingham\")\n    2. Extract latitudes and longitudes from successful results\n    3. batch_get_weather_forecasts(latitudes=\"51.51,53.48,55.95,...\", longitudes=\"-0.13,-2.24,-3.19,...\")\n    4. Present the weather comparison to the user\n\nExample:\n    # Get weather for London, Paris, and Berlin\n    forecasts = await batch_get_weather_forecasts(\n        latitudes=\"51.51,48.86,52.52\",\n        longitudes=\"-0.13,2.35,13.41\",\n        current_weather=True,\n        daily=\"temperature_2m_max,temperature_2m_min,precipitation_sum\"\n    )\n    for item in forecasts.results:\n        f = item.forecast\n        print(f\"Location {item.location_index}: {f.current_weather.temperature}C\")\n",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "latitudes": {
+            "type": "string"
+          },
+          "longitudes": {
+            "type": "string"
+          },
+          "temperature_unit": {
+            "type": "string",
+            "default": "celsius"
+          },
+          "wind_speed_unit": {
+            "type": "string",
+            "default": "kmh"
+          },
+          "precipitation_unit": {
+            "type": "string",
+            "default": "mm"
+          },
+          "timezone": {
+            "type": "string",
+            "default": "auto"
+          },
+          "forecast_days": {
+            "type": "integer",
+            "default": 7
+          },
+          "current_weather": {
+            "type": "boolean",
+            "default": true
+          },
+          "hourly": {
+            "type": "string"
+          },
+          "daily": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "latitudes",
+          "longitudes"
+        ]
+      }
+    },
+    {
+      "name": "geocode_location",
+      "description": "Convert location names to coordinates and get detailed geographic information.\n\nUse this tool FIRST before calling weather tools to get accurate coordinates for any location.\nSearches worldwide database of cities, towns, and places with comprehensive metadata.\n\nArgs:\n    name: Location name to search for. Can be:\n        - City name: \"London\", \"Tokyo\", \"New York\"\n        - City with country: \"Paris, France\", \"Portland, Oregon\"\n        - Region or landmark: \"Cornwall\", \"Lake Tahoe\"\n        - Address or place: \"Times Square\", \"Big Ben\"\n    count: Maximum number of results to return (1-100). Default is 10.\n        Use 1 if you're confident about the location (e.g., \"London, UK\")\n        Use 5-10 for ambiguous names (e.g., \"Paris\" - could be France, Texas, etc.)\n    language: Language code for result names. Options: \"en\" (English, default), \"de\" (German),\n        \"fr\" (French), \"es\" (Spanish), \"it\" (Italian), \"pt\" (Portuguese), etc.\n    format: Response format. Always use \"json\" (default).\n\nReturns:\n    GeocodingResponse: A Pydantic model containing:\n        - results: List of matching locations, each with:\n            - name: Location name\n            - latitude, longitude: Coordinates (use these for weather tools!)\n            - country, country_code: Country information\n            - timezone: IANA timezone (e.g., \"Europe/London\")\n            - elevation: Meters above sea level\n            - population: Population (if available)\n            - admin1, admin2: Administrative divisions (state, county, etc.)\n            - feature_code: Type of place (PPLC=capital, PPL=populated place, etc.)\n\nTips for LLMs:\n    - ALWAYS geocode location names before requesting weather data\n    - Results are sorted by relevance (population, importance)\n    - First result is usually what users mean for well-known cities\n    - For ambiguous names, check country/admin divisions to pick the right one\n    - Use the exact latitude/longitude from results in weather API calls\n    - Timezone from geocoding can be passed to weather APIs for local time\n    - **CRITICAL**: If no results found, IMMEDIATELY retry with simpler search terms!\n      The API works best with just city names (e.g., \"Portland\" not \"Portland Harbor\" or \"Portland, Maine\")\n      WORKFLOW: If \"City, Region\" fails → AUTOMATICALLY try just \"City\" → filter by admin1/admin2/country\n      DO NOT ask the user - just retry automatically with the simpler name!\n    - If still no results after retry: try even simpler terms or use nearest known location\n    - Common pattern: \"Harbor Name\" fails → retry just the city name → filter by region/country\n\nExample:\n    # Find London coordinates\n    locations = await geocode_location(\"London\", count=1)\n    london = locations.results[0]\n    # Use coordinates for weather: london.latitude, london.longitude\n\n    # Handle ambiguous names\n    locations = await geocode_location(\"Paris\", count=5)\n    # results[0] = Paris, France (population 2.1M)\n    # results[1] = Paris, Texas (population 25K)\n    # Pick based on context or ask user\n\n    # If \"City, Region\" returns no results, try just \"City\"\n    locations = await geocode_location(\"Portland, Maine\", count=5)\n    if not locations.results:\n        # Try simpler search\n        locations = await geocode_location(\"Portland\", count=5)\n        # Filter by country_code='US' and admin1='Maine' to get the right one\n        portland = next(r for r in locations.results if r.country_code == 'US' and r.admin1 == 'Maine')\n",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "count": {
+            "type": "integer",
+            "default": 10
+          },
+          "language": {
+            "type": "string",
+            "default": "en"
+          },
+          "format": {
+            "type": "string",
+            "default": "json"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      }
+    },
+    {
+      "name": "batch_geocode_locations",
+      "description": "Geocode multiple location names to coordinates in a single call.\n\nUse this tool instead of calling geocode_location repeatedly when you need\ncoordinates for multiple locations (e.g., \"weather across the UK\",\n\"compare temperatures in European capitals\").\n\nThis tool makes all geocoding requests concurrently, dramatically reducing\nlatency compared to sequential calls. For N locations, this completes in\nroughly the time of 1 request instead of N sequential requests.\n\nArgs:\n    names: Comma-separated list of location names to geocode.\n        Examples:\n            - \"London,Paris,Berlin,Madrid,Rome\"\n            - \"New York,Los Angeles,Chicago,Houston\"\n            - \"Tokyo,Seoul,Beijing,Shanghai\"\n        Each name is searched independently. Whitespace around commas is trimmed.\n        Maximum recommended: 50 locations per call.\n    count: Maximum number of results per location (1-10). Default is 1.\n        Use 1 when you know the exact locations (most common for batch).\n        Use 3-5 for ambiguous names where you need to pick the right match.\n    language: Language code for result names. Default is \"en\".\n\nReturns:\n    BatchGeocodingResponse: Contains:\n        - results: List of BatchGeocodingItem, one per input location, in order.\n          Each item has: query (original name), found (bool), results (list), error (str or None)\n        - total_queries: How many locations were searched\n        - successful: How many returned results\n        - failed: How many returned no results or had errors\n\nTips for LLMs:\n    - Use this FIRST when a user asks about weather in multiple places\n    - After getting coordinates, pass them to batch_get_weather_forecasts\n    - Partial failures are normal - some location names may not be found\n    - Check the 'found' field on each item to identify failures\n    - For failed items, try simpler search terms (just city name without region)\n    - The results are in the SAME ORDER as the input names\n\nExample:\n    # Geocode 5 UK cities at once\n    batch = await batch_geocode_locations(\"London,Manchester,Edinburgh,Cardiff,Belfast\")\n    # Extract coordinates for found locations\n    coords = [(r.results[0].latitude, r.results[0].longitude)\n              for r in batch.results if r.found]\n",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "names": {
+            "type": "string"
+          },
+          "count": {
+            "type": "integer",
+            "default": 1
+          },
+          "language": {
+            "type": "string",
+            "default": "en"
+          }
+        },
+        "required": [
+          "names"
+        ]
+      }
+    },
+    {
+      "name": "get_historical_weather",
+      "description": "Get historical weather data from Open-Meteo Archive API.\n\nArgs:\n    latitude: Latitude coordinate (-90 to 90)\n    longitude: Longitude coordinate (-180 to 180)\n    start_date: Start date in YYYY-MM-DD format\n    end_date: End date in YYYY-MM-DD format\n    temperature_unit: Temperature unit - celsius, fahrenheit\n    wind_speed_unit: Wind speed unit - kmh, ms, mph, kn\n    precipitation_unit: Precipitation unit - mm, inch\n    timezone: Timezone (e.g., 'America/New_York', 'auto' for automatic)\n    hourly: Comma-separated hourly variables\n    daily: Comma-separated daily variables\n\nReturns:\n    HistoricalWeather: Pydantic model with historical data\n\nExample:\n    historical = await get_historical_weather(\n        48.8566, 2.3522,\n        \"2024-01-01\", \"2024-01-07\",\n        daily=\"temperature_2m_max,temperature_2m_min\"\n    )\n    avg_high = sum(historical.daily.temperature_2m_max) / len(historical.daily.temperature_2m_max)\n",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "latitude": {
+            "type": "number"
+          },
+          "longitude": {
+            "type": "number"
+          },
+          "start_date": {
+            "type": "string"
+          },
+          "end_date": {
+            "type": "string"
+          },
+          "temperature_unit": {
+            "type": "string",
+            "default": "celsius"
+          },
+          "wind_speed_unit": {
+            "type": "string",
+            "default": "kmh"
+          },
+          "precipitation_unit": {
+            "type": "string",
+            "default": "mm"
+          },
+          "timezone": {
+            "type": "string",
+            "default": "auto"
+          },
+          "hourly": {
+            "type": "string"
+          },
+          "daily": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "latitude",
+          "longitude",
+          "start_date",
+          "end_date"
+        ]
+      }
+    },
+    {
+      "name": "batch_get_historical_weather",
+      "description": "Get historical weather data for multiple locations in a single API call.\n\nThis tool uses Open-Meteo's native batch support to fetch historical weather\nfor many locations at once. All locations share the same date range.\n\nArgs:\n    latitudes: Comma-separated latitude values for all locations.\n        Example: \"51.51,48.86,52.52\"\n        Must have the same number of values as longitudes.\n    longitudes: Comma-separated longitude values for all locations.\n        Example: \"-0.13,2.35,13.41\"\n        Must have the same number of values as latitudes.\n    start_date: Start date in YYYY-MM-DD format (shared across all locations)\n    end_date: End date in YYYY-MM-DD format (shared across all locations)\n    temperature_unit: Temperature unit - \"celsius\" (default) or \"fahrenheit\"\n    wind_speed_unit: Wind speed unit - \"kmh\" (default), \"ms\", \"mph\", \"kn\"\n    precipitation_unit: Precipitation unit - \"mm\" (default) or \"inch\"\n    timezone: Timezone name or \"auto\" for automatic detection per location\n    hourly: Comma-separated hourly variables (same as get_historical_weather).\n    daily: Comma-separated daily variables (same as get_historical_weather).\n\nReturns:\n    BatchHistoricalWeatherResponse: Contains:\n        - results: List of BatchHistoricalWeatherItem, each with location_index and weather\n        - total_locations: Number of locations queried\n\nTips for LLMs:\n    - Use batch_geocode_locations first to get coordinates\n    - All locations share the same date range - if you need different dates per location,\n      use separate get_historical_weather calls\n    - Results are in the SAME ORDER as the input coordinates\n    - Useful for climate comparisons across cities for the same time period\n\nExample:\n    # Compare last week's weather across European capitals\n    result = await batch_get_historical_weather(\n        latitudes=\"51.51,48.86,52.52\",\n        longitudes=\"-0.13,2.35,13.41\",\n        start_date=\"2025-01-01\",\n        end_date=\"2025-01-07\",\n        daily=\"temperature_2m_max,temperature_2m_min,precipitation_sum\"\n    )\n",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "latitudes": {
+            "type": "string"
+          },
+          "longitudes": {
+            "type": "string"
+          },
+          "start_date": {
+            "type": "string"
+          },
+          "end_date": {
+            "type": "string"
+          },
+          "temperature_unit": {
+            "type": "string",
+            "default": "celsius"
+          },
+          "wind_speed_unit": {
+            "type": "string",
+            "default": "kmh"
+          },
+          "precipitation_unit": {
+            "type": "string",
+            "default": "mm"
+          },
+          "timezone": {
+            "type": "string",
+            "default": "auto"
+          },
+          "hourly": {
+            "type": "string"
+          },
+          "daily": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "latitudes",
+          "longitudes",
+          "start_date",
+          "end_date"
+        ]
+      }
+    },
+    {
+      "name": "get_marine_forecast",
+      "description": "Get ocean and marine weather forecasts including waves, swell, currents, and TIDES.\n\n**PRIMARY USE FOR TIDES**: This tool provides tidal height predictions via the 'sea_level_height_msl' variable.\nUse this when users ask about tide times, high/low tides, or tide heights for coastal locations.\n\nAlso use this for maritime activities, surfing, sailing, fishing, or beach conditions.\nProvides detailed wave forecasts from multiple global ocean models.\n\nArgs:\n    latitude: Latitude coordinate in decimal degrees (-90 to 90). Must be over ocean/coastal areas.\n        Use geocode_location to find coordinates for coastal cities and beaches.\n    longitude: Longitude coordinate in decimal degrees (-180 to 180). Must be over ocean/coastal areas.\n    timezone: Timezone name (e.g., \"Pacific/Auckland\", \"Europe/London\") or \"auto\" for automatic\n    hourly: Comma-separated list of hourly marine variables. Popular options:\n        Wave characteristics (total):\n        - wave_height: Significant wave height in meters (combined wind + swell)\n        - wave_direction: Wave direction in degrees (0-360, meteorological convention)\n        - wave_period: Wave period in seconds\n\n        Wind waves (locally generated):\n        - wind_wave_height: Wind wave height in meters\n        - wind_wave_direction: Wind wave direction in degrees\n        - wind_wave_period: Wind wave period in seconds\n        - wind_wave_peak_period: Peak period of wind waves\n\n        Swell waves (distant storms):\n        - swell_wave_height: Swell wave height in meters\n        - swell_wave_direction: Swell wave direction in degrees\n        - swell_wave_period: Swell wave period in seconds\n        - swell_wave_peak_period: Peak period of swell\n\n        Ocean currents:\n        - ocean_current_velocity: Current speed in m/s\n        - ocean_current_direction: Current direction in degrees\n\n        Tides (IMPORTANT for tide predictions):\n        - sea_level_height_msl: Sea level height in meters (includes tides - shows clear tidal cycles)\n\n        Other useful variables:\n        - sea_surface_temperature: Water temperature in °C\n\n        NOTE: Do NOT include regular weather variables like 'wind_speed', 'temperature',\n        'precipitation' - those come from get_weather_forecast, not marine API!\n\n    daily: Comma-separated list of daily marine variables. Options:\n        - wave_height_max: Maximum wave height for the day\n        - wave_direction_dominant: Dominant wave direction\n        - wave_period_max: Maximum wave period\n    forecast_days: Number of forecast days (1-16). Default is 7.\n\nReturns:\n    MarineForecast: A Pydantic model containing:\n        - latitude, longitude: Actual coordinates used (may be adjusted to nearest ocean grid point)\n        - hourly: Hourly marine forecast data (wave heights, directions, periods, currents)\n        - daily: Daily marine forecast data (if requested)\n        - timezone: Timezone information\n\nTips for LLMs:\n    - **TIDE QUERIES**: When user asks \"what are the tide times\" or \"when is high/low tide\":\n        1. Use geocode_location to get coordinates (try just city name if \"City, Region\" fails)\n        2. Call this tool with hourly=\"sea_level_height_msl\" immediately (don't ask for clarification first!)\n        3. Analyze the sea_level_height_msl values to find peaks (high tide) and troughs (low tide)\n        4. Present the times and heights to the user\n        Example: \"High tide at 05:00 (+1.63m), Low tide at 12:00 (-2.17m)\"\n    - Use this for surfing, sailing, boating, fishing, beach safety questions\n    - wave_height is the key metric - measured in meters:\n        * 0-0.5m: Calm, good for swimming\n        * 0.5-1.5m: Small waves, beginner surfing\n        * 1.5-2.5m: Moderate waves, intermediate surfing\n        * 2.5-4m: Large waves, advanced surfing\n        * 4m+: Very large, dangerous for most activities\n    - wave_period (seconds) indicates wave quality for surfing:\n        * <8s: Short period, choppy (wind waves)\n        * 8-12s: Medium period, good surf\n        * 12s+: Long period, excellent surf (swell)\n    - Combine with get_weather_forecast for complete marine conditions (wind, visibility, storms)\n    - For surfing: need wave_height (size), wave_period (quality), and local wind (from weather forecast)\n    - swell_wave data shows waves from distant storms (clean, organized)\n    - wind_wave data shows local wind-generated waves (choppy if strong winds)\n    - ocean_current data important for safety and navigation\n\nCommon use cases:\n    - **Tide predictions**: Use sea_level_height_msl to find high/low tide times and heights\n    - Surfing: Check wave_height, wave_period, swell_wave_height, and sea_level_height_msl (tides affect wave quality)\n    - Swimming safety: Check wave_height (stay <1m for safety) and sea_level_height_msl (avoid swimming during strong tidal currents)\n    - Sailing/boating: Check wave_height, wave_period, ocean_current_velocity, and sea_level_height_msl (for harbor entry/exit timing)\n    - Fishing: Check ocean_current, sea_surface_temperature, and sea_level_height_msl (fish feeding patterns follow tides)\n    - Beach conditions: Check wave_height, sea_level_height_msl, and combine with weather forecast (wind, rain)\n\nExample:\n    # Get tide times and heights for a coastal location\n    marine = await get_marine_forecast(\n        51.5074, -0.1278,  # Example coordinates (coastal UK)\n        hourly=\"sea_level_height_msl\",\n        timezone=\"Europe/London\",\n        forecast_days=1\n    )\n    # Find high and low tides by analyzing sea_level_height_msl values\n    # High tide = maximum values (e.g., +1.5m), Low tide = minimum values (e.g., -2.0m)\n    # Tidal cycle repeats approximately every 12 hours (two highs and two lows per day)\n\n    # Get surf conditions for Hawaii (including tides)\n    marine = await get_marine_forecast(\n        21.3099, -157.8581,  # Honolulu coordinates\n        hourly=\"wave_height,wave_period,swell_wave_height,swell_wave_direction,sea_level_height_msl\",\n        forecast_days=3\n    )\n    current_wave_height = marine.hourly.wave_height[0]\n    current_period = marine.hourly.wave_period[0]\n    current_tide = marine.hourly.sea_level_height_msl[0]\n\n    # Check if good for surfing\n    if 1.5 <= current_wave_height <= 3.0 and current_period >= 10:\n        print(\"Good surf conditions!\")\n\n    # Get daily max waves for trip planning\n    marine = await get_marine_forecast(\n        lat, lon,\n        daily=\"wave_height_max,wave_direction_dominant\",\n        forecast_days=7\n    )\n",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "latitude": {
+            "type": "number"
+          },
+          "longitude": {
+            "type": "number"
+          },
+          "timezone": {
+            "type": "string",
+            "default": "auto"
+          },
+          "hourly": {
+            "type": "string"
+          },
+          "daily": {
+            "type": "string"
+          },
+          "forecast_days": {
+            "type": "integer",
+            "default": 7
+          }
+        },
+        "required": [
+          "latitude",
+          "longitude"
+        ]
+      }
+    },
+    {
+      "name": "batch_get_marine_forecasts",
+      "description": "Get marine forecasts for multiple coastal locations in a single API call.\n\nThis tool uses Open-Meteo's native batch support to fetch marine conditions\nfor many locations at once. Useful for comparing surf spots, planning coastal\ntrips, or monitoring conditions along a coastline.\n\nArgs:\n    latitudes: Comma-separated latitude values for all locations.\n        Example: \"21.31,33.87,36.97\" (Honolulu, San Diego, Monterey)\n        Must be over ocean/coastal areas. Same count as longitudes.\n    longitudes: Comma-separated longitude values for all locations.\n        Example: \"-157.86,-118.29,-122.00\"\n        Must be over ocean/coastal areas. Same count as latitudes.\n    timezone: Timezone name or \"auto\" for automatic detection per location\n    hourly: Comma-separated hourly marine variables. If not provided, defaults to:\n        wave_height, wave_direction, wave_period, wind_wave_height, swell_wave_height, sea_level_height_msl\n    daily: Comma-separated daily marine variables (e.g., wave_height_max, wave_direction_dominant)\n    forecast_days: Number of forecast days (1-16). Default is 7.\n\nReturns:\n    BatchMarineForecastResponse: Contains:\n        - results: List of BatchMarineForecastItem, each with location_index and forecast\n        - total_locations: Number of locations queried\n\nTips for LLMs:\n    - Use batch_geocode_locations first to get coordinates for coastal cities\n    - Results are in the SAME ORDER as the input coordinates\n    - Useful for \"compare surf conditions\" or \"wave heights along the coast\" queries\n    - All locations share the same hourly/daily variables and forecast_days\n    - Coordinates must be over ocean/coastal areas (inland locations will fail)\n\nExample:\n    # Compare surf conditions at 3 beaches\n    result = await batch_get_marine_forecasts(\n        latitudes=\"21.31,33.87,36.97\",\n        longitudes=\"-157.86,-118.29,-122.00\",\n        hourly=\"wave_height,wave_period,swell_wave_height\",\n        forecast_days=3\n    )\n    for item in result.results:\n        waves = item.forecast.hourly.wave_height[0]\n        print(f\"Location {item.location_index}: {waves}m waves\")\n",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "latitudes": {
+            "type": "string"
+          },
+          "longitudes": {
+            "type": "string"
+          },
+          "timezone": {
+            "type": "string",
+            "default": "auto"
+          },
+          "hourly": {
+            "type": "string"
+          },
+          "daily": {
+            "type": "string"
+          },
+          "forecast_days": {
+            "type": "integer",
+            "default": 7
+          }
+        },
+        "required": [
+          "latitudes",
+          "longitudes"
+        ]
+      }
+    },
+    {
+      "name": "interpret_weather_code",
+      "description": "Interpret WMO weather codes used by Open-Meteo API.\n\nWeather codes are numerical values (0-99) that represent different weather conditions.\nThis tool translates codes into human-readable descriptions.\n\nArgs:\n    weather_code: WMO weather code integer (0-99) from weather forecast data.\n        This is the 'weathercode' field in current_weather or hourly/daily data.\n\nReturns:\n    WeatherCodeInterpretation: Pydantic model with:\n        - code: The weather code number\n        - description: Human-readable weather condition\n        - severity: Category (clear, cloudy, fog, drizzle, rain, freezing, snow, showers, thunderstorm)\n\nCommon Weather Codes:\n    Clear/Cloudy (0-3):\n        0 = Clear sky\n        1 = Mainly clear\n        2 = Partly cloudy\n        3 = Overcast\n\n    Fog (45-48):\n        45 = Fog\n        48 = Depositing rime fog\n\n    Drizzle (51-57):\n        51 = Light drizzle\n        53 = Moderate drizzle\n        55 = Dense drizzle\n        56-57 = Freezing drizzle\n\n    Rain (61-67):\n        61 = Slight rain\n        63 = Moderate rain\n        65 = Heavy rain\n        66-67 = Freezing rain\n\n    Snow (71-77, 85-86):\n        71 = Slight snow\n        73 = Moderate snow\n        75 = Heavy snow\n        77 = Snow grains\n        85-86 = Snow showers\n\n    Showers (80-82):\n        80 = Slight rain showers\n        81 = Moderate rain showers\n        82 = Violent rain showers\n\n    Thunderstorm (95-99):\n        95 = Thunderstorm\n        96 = Thunderstorm with slight hail\n        99 = Thunderstorm with heavy hail\n\nTips for LLMs:\n    - Use this to explain weather conditions to users in natural language\n    - Severity helps determine appropriate activity recommendations\n    - Codes 0-3: Generally safe outdoor conditions\n    - Codes 51-65: Wet conditions, bring umbrella\n    - Codes 71-77: Snow conditions, winter gear needed\n    - Codes 80-99: Severe weather, take precautions\n    - Unknown codes return \"Unknown weather code\" - may be API error\n\nMap icon tip:\n    The returned `icon` field is a PNG URL for the weather condition.\n    When building a GeoJSON FeatureCollection to show on a map, put this\n    URL in each feature's `properties.icon` field — the map renderer will\n    use it as the marker image instead of the default blue pin.\n\nExample:\n    # Get weather and interpret code\n    forecast = await get_weather_forecast(lat, lon, current_weather=True)\n    code = forecast.current_weather.weathercode\n    interpretation = await interpret_weather_code(code)\n    # Returns: WeatherCodeInterpretation(code=61, description=\"Slight rain\",\n    #          severity=\"rain\", icon=\"https://openweathermap.org/img/wn/10d@2x.png\")\n",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "weather_code": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "weather_code"
+        ]
+      }
+    },
+    {
+      "name": "batch_interpret_weather_codes",
+      "description": "Interpret multiple WMO weather codes in a single call.\n\nInstead of calling interpret_weather_code multiple times (one per code),\npass all codes at once. This is much more efficient when processing\nweather data for multiple locations.\n\nArgs:\n    weather_codes: Comma-separated WMO weather code integers (0-99).\n        Example: \"3,51,61,95\" or \"0, 3, 45, 80\"\n\nReturns:\n    BatchWeatherCodeResponse: Pydantic model with:\n        - results: List of interpretations in same order as input (each includes an icon URL)\n        - total_codes: Number of codes processed\n\nMap icon tip:\n    Each result includes an `icon` field — a PNG URL for the weather condition.\n    When building a GeoJSON FeatureCollection for a map, put each result's `icon`\n    in the corresponding feature's `properties.icon` so the map shows weather\n    icons instead of default blue pins.\n\nExample:\n    # After batch forecast returns codes for multiple cities:\n    result = await batch_interpret_weather_codes(\"3,51,61,95\")\n    # Returns all interpretations in one call instead of 4 separate calls\n",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "weather_codes": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "weather_codes"
+        ]
+      }
+    }
+  ]
+}

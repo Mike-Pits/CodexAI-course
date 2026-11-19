@@ -1,0 +1,1 @@
+{"name":"homework-pro-excel","private":true,"type":"module","scripts":{"start":"node server.mjs","setup":"node setup.mjs","test":"node verify.mjs","check":"node --check server.mjs && node --check excel.mjs"}}
